@@ -116,3 +116,11 @@ class NoVNCHtml(BaseLoginHandler):
     @tornado.web.authenticated
     def get(self):
         self.render("novnc.html")
+
+class SkymapHtml(BaseLoginHandler):
+    """
+        Render a skymap html file
+    """
+    @tornado.web.authenticated
+    def get(self):
+        self.render("skymap.html")

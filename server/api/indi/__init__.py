@@ -20,4 +20,5 @@ Boston, MA 02110-1301, USA.
 
 from .py_indi_websocket import PyIndiWebSocketWorker
 
-ws_indi_worker = PyIndiWebSocketWorker()
+"""ws_indi_worker = PyIndiWebSocketWorker()"""
+ws_indi_worker = None

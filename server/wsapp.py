@@ -288,7 +288,7 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,tornado.auth.GoogleOAu
                 extra_params={'approval_prompt': 'auto'})
 
 from .webserver import IndexHtml,ClientHtml,DesktopHtml,DebugHtml,WebSSHHtml
-from .webserver import NoVNCHtml,BugReportHtml
+from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml
 from .webserver import DesktopBrowserHtml,DesktopStoreHtml,DesktopSystemHtml
 from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
                         INDIFIFODeviceStartStop,INDIFIFOGetAllDevice)
@@ -317,6 +317,7 @@ def make_server() -> tornado.web.Application:
             (r"/lockscreen",LockScreenHandler),
             (r"/bugreport",BugReportHtml),
             (r"/novnc",NoVNCHtml),
+            (r"/skymap",SkymapHtml),
 
             (r"/debug/indi",INDIDebugHtml),
             (r"/ws/debugging/", INDIDebugWebSocket),

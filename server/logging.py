@@ -43,44 +43,47 @@ logger.addHandler(file_handle)
 # Set logger level | 设置日志级别
 logger.setLevel(logging.INFO)
 
-def return_success(self,info : str , params = {}) -> dict:
+def return_success(message : str , params = {}) -> dict:
     """
         Return success message | 返回信息
         Args :
-            info : str
+            message : str
             params : dict
         Returns : dict
     """
+    logger.info(message)
     return {
         "status" : 0,
-        "message" : info if info is not None else None,
+        "message" : message if message is not None else None,
         "params" :  params if params is not None else {}
     }
 
-def return_error(self,info : str,params = {}) -> dict :
+def return_error(message : str,params = {}) -> dict :
     """
         Return error message | 返回错误
         Args:
-            info: str # Info message
+            message: str # Info message
             params : dict # Container
         Return : dict
     """
+    logger.error(message)
     return {
         "status" : 1,
-        "message" : info if info is not None else None,
+        "message" : message if message is not None else None,
         "params" : params if params is not None else {} 
     }
 
-def return_warning(self,info : str,params = {}) -> dict:
+def return_warning(message : str,params = {}) -> dict:
     """
         Return warning message | 返回警告
         Args:
-            info: str # Info message
+            message: str # Info message
             params : dict # Container
         Return : dict
     """
+    logger.warning(message)
     return {
         "status" : 2,
-        "message" : info if info is not None else None,
+        "message" : message if message is not None else None,
         "params" : params if params is not None else {}
     }

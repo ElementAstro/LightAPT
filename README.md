@@ -23,7 +23,7 @@ The architecture in LightAPT is inspired by INDI (https://github.com/indilib/ind
     
 ## Features
 
-Though LihgtAPT is very tiny , but here are many good features
+Though LightAPT is very tiny , here are many good features
 
 + Based on INDI and ASCOM , most of the devices support
 + Online/Offline skymap , easy to build your image
