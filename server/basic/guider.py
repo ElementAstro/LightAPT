@@ -2,7 +2,7 @@
 
 """
 
-Copyright(c) 2022 Max Qian  <astroair.cn>
+Copyright(c) 2022-2023 Max Qian  <lightapt.com>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,7 +18,7 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from server.basic.device import BasicDeviceAPI
+from .device import BasicDeviceAPI
 
 import selectors
 import socket
@@ -122,47 +122,39 @@ class BasicGuiderInfo(object):
 
 class BasicGuiderAPI(BasicDeviceAPI):
     """
-        Basic Guider API
+        Basic Guider API Interface
     """
 
-    def start_looping(self,params : dict) -> dict:
+    def start_looping(self,params = {}) -> dict:
         """
             Start looping to get image | 循环曝光
             Args: 
-                params {
+                params :
 
-                }
-            Returns: {
-                "status" : int,
-                "message" : str,
-                "params" : dict
-            }
+            Return :  dict
         """
 
-    def stop_looping(self) -> dict:
+    async def stop_looping(self,params = {}) -> dict:
         """
             Stop the looping process | 停止循环曝光
-            Returns: {
-                "status" : int,
-                "message" : str,
-                "params" : dict
-            }
+            Args : None
+            Return :  dict
         """
 
-    def get_looping_status(self) -> dict:
+    async def get_looping_status(self,params = {}) -> dict:
         """
             Get the looping status | 循环曝光
-            Returns: {
+            Return :  {
                 "status" : int,
                 "message" : str,
                 "params" : dict
             }
         """
     
-    def get_looping_result(self) -> dict:
+    async def get_looping_result(self,params = {}) -> dict:
         """
             Get the looping result | 循环曝光结果
-            Returns: {
+            Return :  {
                 "status" : int,
                 "message" : str,
                 "params" : dict
@@ -170,44 +162,44 @@ class BasicGuiderAPI(BasicDeviceAPI):
             NOTE : This function should get the image of the looping
         """
 
-    def start_guiding(self, params : dict) -> dict:
+    async def start_guiding(self, params = {}) -> dict:
         """
             Start guiding | 开始导星
             Args:
                 params:{
 
                 }
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : None
             }
         """
 
-    def abort_guiding(self) -> dict:
+    async def abort_guiding(self,params = {}) -> dict:
         """
             Abort guiding | 停止导星
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : None
             }
         """
 
-    def get_guiding_status(self) -> dict:
+    async def get_guiding_status(self,params = {}) -> dict:
         """
             Get guiding status | 获取导星状态
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : None
             }
         """
 
-    def get_guiding_result(self) -> dict:
+    async def get_guiding_result(self,params = {}) -> dict:
         """
             Get the result of the current guiding result | 获取导星结果
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : None
@@ -215,35 +207,31 @@ class BasicGuiderAPI(BasicDeviceAPI):
             NOTE : This function usually be called after canceling the guiding
         """
 
-    def start_calibration(self, params : dict) -> dict:
+    async def start_calibration(self, params = {}) -> dict:
         """
             Start calibration | 开始校准
             Args:
                 params:{
 
                 }
-            Returns:{
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
+            Return : dict
         """
     
-    def abort_calibration(self) -> dict:
+    async def abort_calibration(self,params = {}) -> dict:
         """
             Abort the calibration | 停止校准
             Args: None
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : None
             }
         """
 
-    def get_calibration_status(self) -> dict:
+    async def get_calibration_status(self,params = {}) -> dict:
         """
             Get the status of the calibration | 获取校准状态
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : {
@@ -252,10 +240,10 @@ class BasicGuiderAPI(BasicDeviceAPI):
             }
         """
 
-    def get_calibration_result(self) -> dict:
+    async def get_calibration_result(self,params = {}) -> dict:
         """
             Get the result of the calibration | 获取校准结果
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : {
@@ -264,35 +252,27 @@ class BasicGuiderAPI(BasicDeviceAPI):
             }
         """
 
-    def start_dither(self, params : dict) -> dict:
+    async def start_dither(self, params = {}) -> dict:
         """
             Start dithering | 开始抖动
             Args:
                 params:{
 
                 }
-            Returns:{
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
+            Return :  dict
         """
 
-    def abort_dither(self) -> dict:
+    def abort_dither(self,params = {}) -> dict:
         """
             Abort dither | 停止抖动
             Args: None
-            Returns:{
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
+            Return : dict
         """
 
-    def get_dither_status(self) -> dict:
+    def get_dither_status(self,params = {}) -> dict:
         """
             Get the status of the dither process | 获取抖动状态
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : {
@@ -301,10 +281,10 @@ class BasicGuiderAPI(BasicDeviceAPI):
             }
         """
 
-    def get_dither_result(self) -> dict:
+    def get_dither_result(self,params = {}) -> dict:
         """
             Get the result of the dither process | 获取抖动结果
-            Returns:{
+            Return : {
                 "status" : int,
                 "message" : str,
                 "params" : {

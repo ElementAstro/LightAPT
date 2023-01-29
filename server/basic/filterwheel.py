@@ -18,7 +18,7 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from server.basic.device import BasicDeviceAPI
+from .device import BasicDeviceAPI
 
 class BasicFilterwheelInfo(object):
     """
@@ -44,52 +44,37 @@ class BasicFilterwheelInfo(object):
 
 class BasicFilterwheelAPI(BasicDeviceAPI):
     """
-        Basic filterwheel API
+        Basic filterwheel API Interface
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-
-    def __del__(self) -> None:
-        return super().__del__()
-
     # #################################################################
     #
-    # Filterwheel Basic API
+    # Filterwheel Basic API (which will be called by client applications)
     #
     # #################################################################
 
-    def slew_to(self,params : dict) -> dict:
+    async def slew_to(self,params = {}) -> dict:
         """
             Let the filterwheel slew to the specified position
             Args :
                 params : dict
                     position : int
-            Returns :
-                status : int
-                message : str
-                params : None
+            Returns : dict
         """
 
-    def get_filters_list(self) -> dict:
+    async def get_filters_list(self,params = {}) -> dict:
         """
             Get a list of filter name and offset
             Args : None
-            Reterns : 
-                status : int
-                message : str
-                params : dict
-                    offset : list
-                    name : list
+            Retern : dict
+                offset : list
+                name : list
         """
 
-    def get_current_position(self) -> dict:
+    async def get_current_position(self,params = {}) -> dict:
         """
             Get the current position of the filterwheel
             Args : None
-            Reterns :
-                status : int
-                message : str
-                params : dict
-                    position : int
+            Retern : dict
+                position : int
         """

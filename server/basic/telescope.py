@@ -2,7 +2,7 @@
 
 """
 
-Copyright(c) 2022 Max Qian  <astroair.cn>
+Copyright(c) 2022-2023 Max Qian  <lightapt.com>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -112,7 +112,7 @@ class BasicTelescopeInfo(object):
     # Is the telescope at the home position
     _is_homed = False
 
-    def get_dict(self):
+    async def get_dict(self , params = {}):
         """
             Return a dictionary containing all of the information
         """
@@ -174,163 +174,104 @@ class BasicTelescopeInfo(object):
 
 class BasicTelescopeAPI(BasicDeviceAPI):
     """
-        Basic Telescope API
+        Basic Telescope API Interface
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-    
-    def __del__(self) -> None:
-        super().__del__()
-
     # #################################################################
     #
-    # Telescope Basic API
+    # Telescope Basic API (which will be called by client applications)
     #
     # #################################################################
 
-    def goto(self,params : dict) -> dict:
+    async def goto(self , params = {}) -> dict:
         """
             Go to a specific place\n
             Args:   
                 NOTE : If ra and dec are given , please do not provide az and alt
-                params : {
-                    "j2000": boolean # True if the coordinates given are in the format of J2000
-                    "ra" : str # xx:xx:xx
-                    "dec" : str # +-xx:xx:xx
-                    "az" : str # xx:xx:xx
-                    "alt" : str # xx:xx:xx
-                }
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+                params : 
+                    j2000 : boolean # True if the coordinates given are in the format of J2000
+                    ra : str # xx:xx:xx
+                    dec : str # +-xx:xx:xx
+                    az : str # xx:xx:xx
+                    alt : str # xx:xx:xx
+            Return : dict
         """
 
-    def abort_goto(self) -> dict:
+    async def abort_goto(self , params = {}) -> dict:
         """
             Abort goto process\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+            Return : dict
+                ra : str
+                dec : str
             NOTE : The RA and DEC returned are current position telescope target at
         """
 
-    def get_goto_status(self) -> dict:
+    async def get_goto_status(self , params = {}) -> dict:
         """
             Get goto status\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "is_moving" : boolean
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+            Return : dict
+                is_moving : boolean
+                ra : str
+                dec : str
             NOTE : This function is used to check whether telescope is slewing and return current position
         """
 
-    def get_goto_result(self) -> dict:
+    async def get_goto_result(self , params = {}) -> dict:
         """
             Get goto result\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+            Return : dict
+                ra : str
+                dec : str
             NOTE : This function is suggested to be called after goto process is finished
         """
 
-    def sync(self , params : dict) -> dict:
+    async def sync(self , params = {}) -> dict:
         """
             Sync telescope\n
             Args:   
                 NOTE : If ra and dec are given, please do not provide az and alt
-                params : {
-                    "j2000": boolean # True if the coordinates given are in the format of J2000
-                    "ra" : str # xx:xx:xx
-                    "dec" : str # +-xx:xx:xx
-                    "az" : str # xx:xx:xx
-                    "alt" : str # xx:xx:xx
-                }
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                        "dec" : str
-                        "az" : str
-                        "alt" : str
-                    }
-                }
-            NOTE : This function may need telescope support
+                params : 
+                    j2000": boolean # True if the coordinates given are in the format of J2000
+                    ra" : str # xx:xx:xx
+                    dec" : str # +-xx:xx:xx
+                    az" : str # xx:xx:xx
+                    alt" : str # xx:xx:xx
+            Return : dict
+            NOTE : This function may need telescope supported
         """
 
-    def abort_sync(self) -> dict:
+    async def abort_sync(self , params = {}) -> dict:
         """
             Abort sync process\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+            Return : dict
+                ra : str
+                dec : str
             NOTE : The RA and DEC returned are current position telescope target at
         """
     
-    def get_sync_status(self) -> dict:
+    async def get_sync_status(self , params = {}) -> dict:
         """
             Get sync status\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "is_moving" : boolean
-                        "ra" : str
-                        "dec" : str
-                    }
-                }
+            Return : dict
+                is_moving : boolean
+                ra : str
+                dec : str
         """
 
-    def get_sync_result(self) -> dict:
+    async def get_sync_result(self , params = {}) -> dict:
         """
             Get sync result\n
-            Returns:
-                status : int
-                message : str
-                params : 
-                    ra : str
-                    dec : str
-                    az : str
-                    alt : str
+            Return :
+                ra : str
+                dec : str
+                az : str
+                alt : str
             NOTE : This function is suggested to be called after sync process is finished
         """
 
-    def park(self) -> dict:
+    async def park(self , params = {}) -> dict:
         """
-            Park the telescope to default position\n
+            Park the telescope to async default position\n
             Args : None
             Returns : 
                 status : int
@@ -339,7 +280,7 @@ class BasicTelescopeAPI(BasicDeviceAPI):
             NOTE : After execution of this function , we can not control the telescope until we unpark the telescope
         """
 
-    def unpark(self) -> dict:
+    async def unpark(self , params = {}) -> dict:
         """
             Unpark the telescope\n
             Args : None
@@ -350,18 +291,18 @@ class BasicTelescopeAPI(BasicDeviceAPI):
             NOTE : Just like the above function
         """
 
-    def get_park_position(self) -> dict:
+    async def get_park_position(self , params = {}) -> dict:
         """
             Get the parking position of the telescope
             Args : None
             Returns : 
                 status : int
                 message : str
-                params : dict
+                  params = {}
                     position : int or list
         """
 
-    def set_park_position(self , params : dict) -> dict:
+    async def set_park_position(self , params = {}) -> dict:
         """
             Set the parking position of the telescope
             Args : 
@@ -374,7 +315,7 @@ class BasicTelescopeAPI(BasicDeviceAPI):
                 params : None
         """
 
-    def home(self) -> dict:
+    async def home(self , params = {}) -> dict:
         """
             Let the telescope to go home position
             Args : None
@@ -392,63 +333,37 @@ class BasicTelescopeAPI(BasicDeviceAPI):
     # #################################################################
 
     @property
-    def telescope_ra(self) -> dict:
+    async def slewing_ra_rate(self) -> float:
         """
-            Get telescope RA\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "ra" : str
-                    }
-                }
-            NOTE : The RA returned are current position telescope target at
+            Slewing RA rate of the telescope
+            Args : None
+            Return : float
+        """
+
+    @slewing_ra_rate.setter
+    async def slewing_ra_rate(self, value : float) -> dict:
+        """
+            Set the RA rate of the telescope
+            Args :
+                value : float
+            Return : dict
         """
 
     @property
-    def telescope_dec(self) -> dict:
+    async def slewing_dec_rate(self) -> float:
         """
-            Get telescope DEC\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "dec" : str
-                    }
-                }
-            NOTE : The DEC returned are current position telescope target at
+            Get the current DEC slewing rate of the telescope
+            Args : None
+            Return : float
         """
 
-    @property
-    def telescope_az(self) -> dict:
+    @slewing_dec_rate.setter
+    async def slewing_dec_rate(self, value : float) -> dict:
         """
-            Get the AZ of telescope\n
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "az" : str
-                    }
-                }
-            NOTE : The AZ returned are current position telescope target at
-        """
-
-    @property
-    def telescope_alt(self) -> dict:
-        """
-            Get current position 
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "alt" : str
-                    }
-                }
-            NOTE : The ALT returned are current position telescope target at
+            Set the DEC slewing rate of the telescope
+            Args :
+                value : float
+            Return : dict
         """
 
     # #################################################################
@@ -456,31 +371,3 @@ class BasicTelescopeAPI(BasicDeviceAPI):
     # Telescope Status
     #
     # #################################################################
-
-    @property
-    def is_connected(self) -> dict:
-        """
-            Check if telescope is connected
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "is_connected" : boolean
-                    }
-                }
-        """
-
-    @property
-    def is_slewing(self) -> dict:
-        """
-            Check if the telescope is slewing
-            Returns:
-                {
-                    "status" : int
-                    "message" : str
-                    "params" : {
-                        "is_slewing" : boolean
-                    }
-                }
-        """

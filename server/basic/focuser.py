@@ -2,7 +2,7 @@
 
 """
 
-Copyright(c) 2022 Max Qian  <astroair.cn>
+Copyright(c) 2022-2023 Max Qian  <lightapt.com>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,7 +18,7 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from server.basic.device import BasicDeviceAPI
+from .device import BasicDeviceAPI
 
 class BasicFocuserInfo(object):
     """
@@ -52,7 +52,7 @@ class BasicFocuserInfo(object):
         """
             Return focuser information in a dictionary
             Args: None
-            Returns: dict
+            Return: dict
         """
         return {
             "type": self._type,
@@ -85,14 +85,8 @@ class BasicFocuserInfo(object):
 
 class BasicFocuserAPI(BasicDeviceAPI):
     """
-        Basic Focuser API
+        Basic Focuser API Interface
     """
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def __del__(self) -> None:
-        super().__del__()
 
     # #################################################################
     #
@@ -100,58 +94,45 @@ class BasicFocuserAPI(BasicDeviceAPI):
     #
     # #################################################################
 
-    def move_step(self, params : dict) -> dict:
+    async def move_step(self, params = {}) -> dict:
         """
             Focuser move given step | 电调移动指定步数
             Args :
                 params : 
                     step : int
-            Returns : 
-                status : int,
-                message : str,
-                params : None
+            Return : dict
         """
 
-    def move_to(self , params : dict) -> dict:
+    async def move_to(self , params = {}) -> dict:
         """
             Move to target position | 移动至指定位置
             Args :
                 params : 
                     position : int
-            Returns : 
-                status : int,
-                message : str,
-                params : None
+            Return : dict
         """
 
-    def abort_movement(self) -> dict:
+    async def abort_movement(self , params = {}) -> dict:
         """
             Abort movement | 停止
-            Returns : 
-                status : int,
-                message : str,
-                params : None
+            Args : None
+            Return : dict
         """
 
-    def get_temperature(self) -> dict:
+    async def get_temperature(self) -> dict:
         """
             Get focuser temperature | 获取电调温度
             Args : None
-            Returns : 
-                status : int,
-                message : str,
-                params : 
-                    temperature : float
+            Return : dict
+                temperature : float
             NOTE : This function needs focuser support
         """
 
-    def get_movement_status(self) -> dict:
+    async def get_movement_status(self) -> dict:
         """
             Get focuser movement status
             Args : None
-            Returns : 
-                status : int,
-                message : str,
-                params : 
-                    status : int
+            Return : dict
+                status : int
+                position : int
         """

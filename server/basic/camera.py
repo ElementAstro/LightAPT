@@ -54,7 +54,6 @@ class BasicCameraInfo(object):
     _can_cooling = False
     _can_gain = False
     _can_get_coolpower = False
-    _can_guiding = False
     _can_has_shutter = False
     _can_iso = False
     _can_offset = False
@@ -64,9 +63,7 @@ class BasicCameraInfo(object):
     _is_connected = False
     _is_cooling = False
     _is_exposure = False
-    _is_guiding = False
     _is_imageready = False
-    _is_video = False
 
     _max_gain : int
     _min_gain : int
@@ -100,9 +97,9 @@ class BasicCameraInfo(object):
 
     def get_dict(self) -> dict:
         """
-            Returns a dictionary containing camera information
+            Return a dictionary containing camera information
             Args : None
-            Returns : dict
+            Return : dict
         """
         return {
             "type": self._type,
@@ -176,686 +173,274 @@ class BasicCameraInfo(object):
             }
         }
 
-class BasicSequenceInfo(object):
-    """
-        Basic sequence information container
-    """
-
-    sequence_count = 0
-    sequence = []
-
-    def get_dict(self) -> dict:
-        """
-            Returns a dictionary containing basic sequence information
-            Args : None
-            Returns : dict
-        """
-        return {
-            "sequence_count" : self.sequence_count,
-            "sequence" : self.sequence,
-        }
-
 class BasicCameraAPI(BasicDeviceAPI):
     """
-        Basic Camera API
+        Basic Camera API Interface
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-
-    def __del__(self) -> None:
-        return super().__del__()
-
     # #################################################################
     #
-    # Camera Basic API
+    # Camera Basic API (These will be called by client applications)
     #
     # #################################################################
 
-    def start_exposure(self, params : dict) -> dict:
+    async def start_exposure(self, params : dict) -> dict:
         """
             Start exposure function | 开始曝光
-            Args : {
-                "params" : {
-                    "exposure" : float # exposure time
-                    "gain" : int # gain
-                    "offset" : int # offset
-                    "binning" : int # binning
-                    "image" : {
-                        "is_save" : bool
-                        "name" : str
-                        "type" : str # fits or tiff of jpg
-                    }
-                    "filterwheel" : {
-                        "enable" : boolean # enable or disable
-                        "filter" : int # id of filter
-                    }
-                }
-            }
-            Returns : {
-                "status" : int ,
-                "message" : str,
-                "params" : None
-            }
+            Args :
+                params :
+                    exposure : float # exposure time
+            Return : dict
         """
 
-    def abort_exposure(self) -> dict:
+    async def abort_exposure(self, params : dict) -> dict:
         """
             Abort exposure function | 关闭曝光
-            Args:
-                None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
+            Args : None
+            Return : dict
         """
 
-    def get_exposure_status(self) -> dict:
+    async def get_exposure_status(self, params : dict) -> dict:
         """
             Get exposure status function | 获取曝光状态
-            Args:
-                None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Exposure Status Object
-                }
-            }
+            Args : None
+            Return : dict
+                status" : Exposure Status Object
             NOTE : This function should not be called if the camera is not in exposure
+            NOTE : This function should be called just like a looping function
         """
 
-    def get_exposure_result(self) -> dict:
+    async def get_exposure_result(self, params : dict) -> dict:
         """
             Get exposure result function | 获取曝光结果
-            Args:
-                None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "image" : Base64 Encode Image Data,
-                    "histogram" : List,
-                    "info" : dict
-                }
-            }
-        """
-
-    def start_sequence_exposure(self , params : dict) -> dict:
-        """
-            Start exposure function | 开始计划曝光
-            Args : {
-                "params" : {
-                    "exposure" : float # exposure time
-                    "gain" : int # gain
-                    "offset" : int # offset
-                }
-            }
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "results" : SeqExposureResults
-                }
-            }
-            TODO : Args and Returns should be thinked more carefully
-        """
-
-    def abort_sequence_exposure(self) -> dict:
-        """
-            Abort sequence exposure | 停止计划拍摄
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
-            NOTE : This function should not be called if the camera is not in exposure
+            Return : dict
+                image : Base64 Encode Image Data,
+                histogram : List,
+                info : dict
         """
 
-    def pause_sequence_exposure(self) -> dict:
-        """
-            Pause sequence exposure | 停止计划拍摄 (Can continue)
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
-        """
-    
-    def continue_sequence_exposure(self) -> dict:
-        """
-            Continue sequence exposure | 继续计划拍摄
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
-        """
-
-    def get_sequence_exposure_status(self) -> dict:
-        """
-            Get exposure status function | 获取计划拍摄状态
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Exposure Status Object
-                }
-            }
-        """
-
-    def get_sequence_exposure_result(self) -> dict:
-        """
-            Get the sequence exposure result | 获取计划拍摄结果
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "image" : Base64 Encode Image Data List
-                    "histogram" : List,
-                    "info" : dict
-                }
-            }
-            NOTE : This function should be thinked carefully
-        """
-
-    def cooling(self, params : dict) -> dict:
+    async def cooling(self, params : dict) -> dict:
         """
             Cooling function | 制冷
-            Args : {
-                "params" : {
-                    "enable" : boolean
-                }
-            }
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Cooling Status Object
-                }
-            }
-            NOTE : This function needs camera support
+            Args : 
+                params :
+                    enable : boolean
+            Return : dict
+            NOTE : This function needs camera supported
         """
 
-    def cooling_to(self, params : dict) -> dict:
+    async def cooling_to(self, params : dict) -> dict:
         """
             Cooling to temperature function | 制冷到指定温度
-            Args : {
-                "params" : {
-                    "temperature" : float
-                }
-            }
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Cooling Status Object
-                }
-            }
+            Args :
+                params : 
+                    temperature : float
+            Return : dict
             NOTE : This function needs camera support
         """
 
-    def get_cooling_status(self) -> dict:
+    async def get_cooling_status(self, params : dict) -> dict:
         """
             Get cooling status function | 获取当前制冷状态
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Cooling Status Object
-                }
-            }
+            Return : dict
+                status : Cooling Status Object
             NOTE : This function needs camera support
         """
 
-    def start_video_capture(self, params : dict) -> dict:
+    async def get_current_temperature(self, params : dict) -> dict:
         """
-            Start video capture function | 开始录制视频
-            Args : {
-                "params" : {
-                    "path" : str
-                }
-            }
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
+            Get current temperature of the camera | 获取相机当前温度
+            Args : None
+            Return : dict
+                temperature : float
         """
 
-    def abort_video_capture(self) -> dict:
+    async def get_cooling_power(self , params : dict ) -> dict:
         """
-            Abort video capture function | 停止录制视频
+            Get the cooling power of the camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : None
-            }
-        """
-
-    def get_video_capture_status(self) -> dict:
-        """
-            Get video capture status function | 获取录制视频状态
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : Video Capture Status Object
-                }
-            }
-        """
-
-    def get_video_capture_result(self) -> dict:
-        """
-            Get video capture result | 获取视频录制结果
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "video" : Video 
-                }
-            }
+            Return : dict
+                power : float
+            NOTE : This function needs camera supported
         """
 
     # #################################################################
     #
-    # Camera Current Information
+    # Camera Settings
     #
     # #################################################################
 
-    @property
-    def gain(self) -> dict:
-        """
-            Get camera current gain function | 获取相机当前增益
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "gain" : float
-                }
-            }
-        """
-
-    @property
-    def offset(self) -> dict:
-        """
-            Get camera current offset function | 获取相机当前偏置
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "offset" : float
-                }
-            }
-        """
-
-    @property
-    def binning(self) -> dict:
-        """
-            Get camera current binning function | 获取相机当前像素合并
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "binning" : int
-                }
-            }
-        """
-
-    @property
-    def temperature(self) -> dict:
-        """
-            Get camera current temperature function | 获取相机当前温度
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "temperature" : float
-                }
-            }
-        """
-
-    @property
-    def cooling_power(self) -> dict:
-        """
-            Get camera current cooling power function | 获取相机当前制冷功率
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "power" : float
-                }
-            }
-        """
-
     # #################################################################
-    #
-    # Camera Status
-    #
+    # Parameters about the Exposure
     # #################################################################
 
     @property
-    def is_connected(self) -> dict:
+    async def gain(self) -> int:
         """
-            Is camera connected | 是否连接成功
+            Get the current gain of this camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
+            Return : int
+        """
+
+    @gain.setter
+    async def gain(self, value : int) -> dict:
+        """
+            Set the gain of this camera
+            Args : value : int
+            Return : dict
         """
 
     @property
-    def is_exposure(self) -> dict:
+    async def offset(self) -> int:
         """
-            Is exposure function | 是否在曝光
+            Get the current offset of this camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : int
-                }
-            }
+            Return : int
+        """
+
+    @offset.setter
+    async def offset(self, value : int) -> dict:
+        """
+            Set the current offset of this camera
+            Args : value : int
+            Return : dict
         """
 
     @property
-    def is_video(self) -> dict:
+    async def binning(self) -> int | list:
         """
-            Is video function | 是否在录制视频
+            Get the current binning mode of this camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
+            Return : int | list
+            NOTE : Some advanced cameras support to set binx and biny
+        """
+
+    @binning.setter
+    async def binning(self, value : int | list) -> dict:
+        """
+            Set the binning mode of this camera
+            Args : 
+                value : list or int based on the camera
+            Return : dict
         """
 
     @property
-    def is_guiding(self) -> dict:
+    async def iso(self) -> int:
         """
-            Is guiding | 是否在导星
+            Get the current iso of the camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-            NOTE : This function needs camera support
+            Return : int
+        """
+
+    @iso.setter
+    async def iso(self, value : int) -> dict:
+        """
+            Set the iso of the camera
+            Args : 
+                value : int
+            Return : dict
+        """
+
+    # #########################################################################
+    # Parameters about the Cooling
+    # #########################################################################
+
+    @property
+    async def temperature(self) -> float:
+        """
+            Get the current temperature of the camera
+            Args : None
+            Return : float
+            NOTE : This function needs camera supported
+        """
+
+    @temperature.setter
+    async def temperature(self , value : float) -> dict:
+        """
+            Set the current temperature of the camera
+            Args : 
+                value : float
+            Return : dict
+            NOTE : This function needs camera supported
         """
 
     @property
-    def is_cooling(self) -> dict:
+    async def cooling_power(self) -> float:
         """
-            Is camera cooling | 相机是否在制冷
+            Get the current Cool power of the camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-        """
-
-    @property
-    def is_imageready(self) -> dict:
-        """
-            Is imageready function | 图像处理是否完成
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
+            Return : float
+            NOTE : This function needs camera supported
         """
 
     # #################################################################
-    #
-    # Camera Properties
-    #
-    # #################################################################    
-
-    @property
-    def maxmin_gain(self) -> dict:
-        """
-            Get camera max and min gain function | 获取最大最小增益
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "max_gain" : float,
-                    "min_gain" : float
-                }
-        """
-
-    @property
-    def maxmin_offset(self) -> dict:
-        """
-            Get the maximum and minimum offset | 获取最大最小增益
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "max_offset" : float,
-                    "min_offset" : float
-                }
-            }
-        """
-
-    @property
-    def maxmin_exposure(self) -> dict:
-        """
-            Get the maximum and minimum exposure | 获取曝光最长和最短时间
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "max_exposure" : float,
-                    "min_exposure" : float
-                }
-            }
-        """
-
-    @property
-    def max_bin(self) -> dict:
-        """
-            Get the maximum bin | 获取最大像素合并
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "max_bin" : int
-                }
-            }            
-        """
-
-    @property
-    def frame(self) -> dict:
-        """
-            Get the current frame infomation | 获取画幅信息
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "height" : int, # current height of the image
-                    "width" : int, # current width of the image
-                    "bayer_offset_x" : int,
-                    "bayer_offset_y" : int,
-                    "subframe_x" : int,
-                    "subframe_y" : int,
-                    "start_x" : int # current start position
-                    "start_y" : int # current start position
-                    "pixel_height" : float,
-                    "pixel_width" : float
-                }
-            }
-        """
-
-    @property
-    def readout(self) -> dict:
-        """
-            Get the readout mode and info about sensor | 获取相机输出模式并且获取芯片信息
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "readout_mode" : int,
-                    "sensor_type" : str,
-                    "sensor_name" : str,
-                }
-            }
-            NOTE : This function needs camera and software support
-        """
-
-    # #################################################################
-    #
-    # Camera Ability
-    #
+    # Parameters about the Image
     # #################################################################
 
     @property
-    def can_binning(self) -> dict:
+    async def image_height(self) -> int:
         """
-            Check if camera can binning | 是否是否支持像素合并
+            Get the current Image height of the camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
+            Return : int
+        """
+
+    @image_height.setter
+    async def image_height(self , value : int) -> dict:
+        """
+            Set the frame height of the camera
+            Args : 
+                value : int
+            Return : dict
         """
 
     @property
-    def can_cooling(self) -> dict:
+    async def image_width(self) -> int:
         """
-            Check if camera can cooling | 相机是否支持制冷
+            Get the frame width of the camera
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-            NOTE : This function needs camera support
+            Return : int
+        """
+
+    @image_width.setter
+    async def image_width(self , value : int) -> dict:
+        """
+            Set the frame width of the camera
+            Args : 
+                value : int # width of the frame
+            Return : dict
         """
 
     @property
-    def can_gain(self) -> dict:
+    async def frame_start_x(self) -> int:
         """
-            Check if camera can gain | 相机是否支持增益
+            Get the x position of the camera frame start position
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-            NOTE : I'm not sure whether DSLR is supported
+            Return : int
+        """
+
+    @frame_start_x.setter
+    async def frame_start_x(self, value : int) -> dict:
+        """
+            Set the x position of the camera frame start position
+            Args : value : int
+            Return : dict
         """
 
     @property
-    def can_get_coolpower(self) -> dict:
+    async def frame_start_y(self) -> int:
         """
-            Check if camera can get coolpower | 相机是否支持获取制冷功率
+            Get the y position of the camera frame start position
             Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-            NOTE : This function needs camera support
+            Return : int
         """
 
-    @property
-    def can_guiding(self) -> dict:
+    @frame_start_y.setter
+    async def frame_start_y(self, value : int) -> dict:
         """
-            Check if camera can guiding | 相机是否支持导星
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-        """
-
-    @property
-    def can_has_shutter(self) -> dict:
-        """
-            Check if camera can has shutter | 相机是否有机械快门
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-        """
-
-    @property
-    def can_iso(self) -> dict:
-        """
-            Check if camera can iso | 相机是否支持输入 ISO
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-        """
-
-    @property
-    def can_offset(self) -> dict:
-        """
-            Check if camera can offset | 相机是否支持偏置
-            Args : None
-            Returns : {
-                "status" : int,
-                "message" : str,
-                "params" : {
-                    "status" : bool
-                }
-            }
-            NOTE : I'm not sure whether DSLR is supported
+            Set the y position of the camera frame start position
+            Args : value : int
+            Return : dict
         """
