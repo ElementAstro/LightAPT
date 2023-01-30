@@ -49,6 +49,7 @@ Pay attention to that optional dependencies are recommended to be installed for 
 #### Requirements
 
 + astropy(optional) : For fits image processing and astronomical calculation
++ cv2 : Image processing and calculations
 + ephem : Calculate star coordinates
 + numpy : Image processing and calculations
 + paramiko(optional) : SSH client to support WebSSH

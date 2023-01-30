@@ -48,6 +48,8 @@ class WSCamera(object):
             Args : None
             Returns : None
         """
+        if self.device.info._is_connected:
+            self.device.disconnect()
 
     def __str__(self) -> str:
         """
@@ -76,7 +78,6 @@ class WSCamera(object):
         _device_name = params.get('device_name')
 
         if _type is None or _device_name is None:
-            logger.error(_("Type or device name must be specified"))
             return (_("Type or device name must be specified"))
         
         if _type == "indi":
@@ -86,8 +87,7 @@ class WSCamera(object):
             from server.api.ascom.camera import AscomCameraAPI
             self.device = AscomCameraAPI()
         else:
-            logger.error(_("Unknown device type : {}").format(_type))
-            return (_("Unknown device type"))
+            return return_error(_("Unknown device type"))
 
         return self.device.connect(params=params)
 
@@ -98,8 +98,7 @@ class WSCamera(object):
             Returns : dict
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Camera is not connected , please do not execute disconnect command"))
-            return (_("Camera is not connected"))
+            return return_error(_("Camera is not connected , please do not execute disconnect command"))
         
         return self.device.disconnect()
 
@@ -111,8 +110,7 @@ class WSCamera(object):
             NOTE : This function is just allowed to be called when the camera had already connected
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Camera is not connected , please do not execute reconnect command"))
-            return (_("Camera is not connected"))
+            return return_error(_("Camera is not connected , please do not execute reconnect command"))
 
         return self.device.reconnect()
 
@@ -123,8 +121,7 @@ class WSCamera(object):
             Returns : dict
         """
         if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Camera had already been connected , please do not execute scanning command"))
-            return (_("Camera has already been connected"))
+            return return_error(_("Camera had already been connected , please do not execute scanning command"))
 
         return self.device.scanning()
 
@@ -134,9 +131,8 @@ class WSCamera(object):
             Args : None
             Returns : dict
         """
-        if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Camera is not connected , please do not execute polling command"))
-            return (_("Camera is not connected"))
+        if self.device is None or not self.device.info._is_connected:
+            return return_error(_("Camera is not connected , please do not execute polling command"))
 
         return self.device.polling()
 
@@ -149,14 +145,12 @@ class WSCamera(object):
             Returns : dict
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Camera int not connected , please do not execute start exposure command"))
-            return (_("Camera is not connected"))
+            return return_error(_("Camera int not connected , please do not execute start exposure command"))
 
         exposure = params.get('exposure')
 
         if exposure is None or not 0 <= exposure <= 3600:
-            logger.error(_("A reasonable exposure value is required"))
-            return (_("A reasonable exposure value is required"))
+            return return_error(_("A reasonable exposure value is required"))
         
         self.blob.clear()
         
@@ -164,7 +158,7 @@ class WSCamera(object):
         if res.get('status') != 0:
             return res
 
-        self.thread = threading.Thread(target=self.exposure_thread)
+        self.thread = threading.Thread(target=asyncio.run,args=(self.exposure_thread))
         try:
             self.thread.daemon = True
         except:
@@ -180,25 +174,23 @@ class WSCamera(object):
             Returns : None
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Camera is not connected , please do not execute start exposure command"))
-            return (_("Camera int not connected"))
+            return return_error(_("Camera is not connected , please do not execute abort exposure command"))
 
         if not self.device.info._is_exposure:
-            logger.error(_("Exposure is not started, please do not execute abort exposure command"))
-            return (_("Exposure is not started"))
+            return return_error(_("Exposure is not started, please do not execute abort exposure command"))
 
         return self.device.abort_exposure()
 
-    def exposure_thread(self,params = {}) -> None:
+    async def exposure_thread(self) -> None:
         """
             Guard thread during the exposure and read the the status of the camera each second
             Args : None
             Returns : None
         """
         used_time = 0
-        while self.get_exposure_status().get("params").get('status') and used_time <= self.device.info._timeout:
-            sleep(1)
-            used_time += 1
+        while await self.get_exposure_status().get("params").get('status') and used_time <= self.device.info._timeout:
+            await asyncio.sleep(0.5)
+            used_time += 0.5
 
     async def get_exposure_status(self,params = {}) -> dict:
         """
@@ -207,12 +199,10 @@ class WSCamera(object):
             Returns : None
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Camera is not connected , please do not execute start exposure command"))
-            return (_("Camera is not connected"))
+            return (_("Camera is not connected , please do not execute get exposure status command"))
 
         if not self.device.info._is_exposure:
-            logger.error(_("Exposure is not started, please do not execute get exposure status command"))
-            return (_("Exposure is not started"))
+            return (_("Exposure is not started, please do not execute get exposure status command"))
 
         res = self.device.get_exposure_status()
         if res.get('status') != 0:

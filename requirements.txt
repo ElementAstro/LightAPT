@@ -1,4 +1,5 @@
 astropy
+cv2
 ephem
 numpy
 paramiko

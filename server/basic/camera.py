@@ -36,7 +36,7 @@ class BasicCameraInfo(object):
     _gain = 0
     _offset = 0
     _iso = 0
-    _binning = []
+    _binning = [1,1]
     _temperature = -256
     _cool_power = 0
     _last_exposure = 0

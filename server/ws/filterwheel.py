@@ -71,7 +71,6 @@ class WSFilterwheel(object):
         _device_name = params.get('device_name')
 
         if _type is None or _device_name is None:
-            logger.error(_("Type or device name must be specified"))
             return return_error(_("Type or device name must be specified"))
         
         if _type == "indi":
@@ -81,7 +80,6 @@ class WSFilterwheel(object):
             from server.api.ascom.filterwheel import AscomFilterwheelAPI
             self.device = AscomFilterwheelAPI()
         else:
-            logger.error(_("Unknown device type : {}").format(_type))
             return return_error(_("Unknown device type"))
 
         return self.device.connect(params=params)
@@ -93,7 +91,6 @@ class WSFilterwheel(object):
             Returns : dict
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Filterwheel is not connected , please do not execute disconnect command"))
             return return_error(_("Filterwheel is not connected"))
         
         return self.device.disconnect()
@@ -107,7 +104,6 @@ class WSFilterwheel(object):
             NOTE : This function is just allowed to be called when the filterwheel had already connected
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Filterwheel is not connected , please do not execute reconnect command"))
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.reconnect()
@@ -120,7 +116,6 @@ class WSFilterwheel(object):
                 list : list # a list of filterwheels available
         """
         if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Filterwheel had already been connected , please do not execute scanning command"))
             return return_error(_("Filterwheel has already been connected"))
 
         return self.device.scanning()
@@ -133,7 +128,6 @@ class WSFilterwheel(object):
                 info : dict # usually generated from get_dict() function
         """
         if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Filterwheel is not connected , please do not execute polling command"))
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.polling()
@@ -155,15 +149,40 @@ class WSFilterwheel(object):
             Returns : dict
                 filter_id : int # id of the current filter
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.get_current_filter()
 
     # #############################################################
     # Slew
     # #############################################################
 
-    async def slew(self,params = {}) -> dict:
+    async def slew_to(self,params = {}) -> dict:
         """
             Filter wheel slew to the current filter
             Args : dict
                 id : int # id of the target filter
             Returns : dict
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.slew_to(params)
+
+    # ###############################################################
+    # Get all of the available filters
+    # ###############################################################
+
+    async def get_filter_list(self, params = {}) -> dict:
+        """
+            Async get all of the available filters
+            Args : None
+            Returns : dict
+                offset : a list of the filters offsets
+                name : a list of the names of the filters
+        """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.get_filter_list()

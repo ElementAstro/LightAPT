@@ -20,8 +20,7 @@ Boston, MA 02110-1301, USA.
 
 from enum import Enum
 
-from gettext import gettext
-_ = gettext
+from utils.i18n import _
 
 class AscomCameraError(Enum):
     """
@@ -32,6 +31,7 @@ class AscomCameraError(Enum):
     NetworkError = _("Network error occurred")
     DriverError = _("Driver error occurred")
     InvalidOperation = _("Invalid operation")
+    NotSupported = _("Not supported function")
 
     NoHostValue = _("No host value provided")
     NoPortValue = _("No port value provided")
@@ -45,11 +45,25 @@ class AscomCameraError(Enum):
     InvalidGainValue = _("Invaild gain value provided , default is 20")
     InvalidOffsetValue = _("Invalid offsets value provided , default is 20")
     InvalidBinningValue = _("Invalid binding mode value provided , default is 1")
+    InvalidCoolingValue = _("Invalid cooling status value provided")
+    InvalidTemperatureValue = _("Invalid temperature value provided")
+    InvalidROIValue = _("Invalid ROI value provided")
 
+    CanNotCooling = _("Camera is not supported to cool")
     CanNotGetTemperature = _("Could not get camera current temperature")
+    CanNotGetCoolingPower = _("Could not get camera current power")
     CanNotGetPower = _("Could not get camera current cooling power")
+    CanNotGetGain = _("Could not get the gain value of the current camera")
+    CanNotGetOffset = _("Could not get the offset value of the current camera")
+    CanNotSetGain = _("Could not set the gain value of the current camera")
+    CanNotSetOffset = _("Could not set the offset value of the current camera")
+    CanNotGetBinning = _("Could not get binning mode of the current camera")
+    CanNotSetBinning = _("Could not set binning mode of the current camera")
 
+    StartExposureError = _("Start exposure failed")
     AbortExposureError = _("Abort exposure failed")
+
+    CameraNotCooling = _("Camera is not started cooling mode")
 
 class AscomCameraSuccess(Enum):
     """
@@ -62,7 +76,20 @@ class AscomCameraSuccess(Enum):
     GetConfigrationSuccess = _("Get camera configuration successfully")
     SaveConfigrationSuccess = _("Save camera configuration successfully")
 
+    StartExposureSuccess = _("Start exposure successfully")
     AbortExposureSuccess = _("Abort exposure successfully")
+    CoolingToSuccess = _("Camera started cooling to specified temperature successfully")
+    GetCoolingPowerSuccess = _("Get camera current cooling power successfully")
+    GetCoolingStatusSuccess = _("Get camera current cooling status successfully")
+    GetCoolingTemperatureSuccess = _("Get camera current Cooling temperature successfully")
+    GetROISuccess = _("Get camera ROI successfully")
+    SetROISuccess = _("Set camera ROI successfully")
+    GetGainSuccess = _("Get camera gain value successfully")
+    SetGainSuccess = _("Set camera gain value successfully")
+    GetOffsetSuccess = _("Get camera offset value successfully")
+    SetOffsetSuccess = _("Set camera offset value successfully")
+    GetBinningSuccess = _("Get camera binning mode successfully")
+    SetBinningSuccess = _("Set camera binning mode successfully")
 
 class AscomCameraWarning(Enum):
     """

@@ -140,7 +140,7 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
         """
         # Parser the message
         command = None
-        if isinstance(message,dict):
+        if isinstance(message,str):
             try:
                 command = json.loads(message)
             except json.JSONDecodeError as e:
@@ -150,7 +150,10 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
         elif isinstance(message,list):
             # TODO : will we add a multi-command message , just like a sequence
             pass
-        # Run the command and wait for the response
+        else:
+            await self.write_message(_("Failed to parse message to a dictionary , Unknown message"))
+            return
+        # Run the command and wait for the response)
         try:
             res = await self.run_command(
                 command["device"],
@@ -161,7 +164,7 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             logger.error(_("Failed to execute command : {}").format(e))
             await self.write_message({"status": 1, "message": "Failed to execute command"})
         # Return the response to client
-        await self.write_message(json.dumps(res))
+        await self.write_message(json.dumps(await self.generate_command(res)))
         
     async def run_command(self, device : str, command : str , params : dict) -> dict:
         """
@@ -220,6 +223,21 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             logger.error(_("Error executing command : {}").format(e))
             return return_error(_("Error executing command"),{"error":e})
         return res
+
+    async def generate_command(self, params : dict) -> dict:
+        """
+            Generates driver responses to the format expected
+            Args : params : dict
+            Returns : dict
+        """
+        r = None
+        if params.get("params",{}).get('image') is not None:
+            r = params.get("params",{}).get('image')
+        else:
+            r = {"type" : "data"}
+            r.update(params)
+        return r
+
 
 # #################################################################
 # Login Module

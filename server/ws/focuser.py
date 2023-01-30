@@ -71,7 +71,6 @@ class WSFocuser(object):
         _device_name = params.get('device_name')
 
         if _type is None or _device_name is None:
-            logger.error(_("Type or device name must be specified"))
             return return_error(_("Type or device name must be specified"))
         
         if _type == "indi":
@@ -81,7 +80,6 @@ class WSFocuser(object):
             from server.api.ascom.focuser import AscomFocuserAPI
             self.device = AscomFocuserAPI()
         else:
-            logger.error(_("Unknown device type : {}").format(_type))
             return return_error(_("Unknown device type"))
 
         return self.device.connect(params=params)
@@ -93,7 +91,6 @@ class WSFocuser(object):
             Returns : dict
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Focuser is not connected , please do not execute disconnect command"))
             return return_error(_("Focuser is not connected"))
         
         return self.device.disconnect()
@@ -107,7 +104,6 @@ class WSFocuser(object):
             NOTE : This function is just allowed to be called when the focuser had already connected
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Focuser is not connected , please do not execute reconnect command"))
             return return_error(_("Focuser is not connected"))
 
         return self.device.reconnect()
@@ -120,7 +116,6 @@ class WSFocuser(object):
                 list : list # a list of focusers available
         """
         if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Focuser had already been connected , please do not execute scanning command"))
             return return_error(_("Focuser has already been connected"))
 
         return self.device.scanning()
@@ -133,10 +128,34 @@ class WSFocuser(object):
                 info : dict # usually generated from get_dict() function
         """
         if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Focuser is not connected , please do not execute polling command"))
             return return_error(_("Focuser is not connected"))
 
         return self.device.polling()
+
+    async def get_parameter(self, params = {}) -> dict:
+        """
+            Get the specified parameter and return the value
+            Args : 
+                params : dict
+                    name : str # name of the parameter
+        """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+
+        return self.get_parameter(params=params)
+
+    async def set_parameter(self, params = {}) -> dict:
+        """
+            Set the specified parameter of the camera
+            Args :
+                params : dict
+                    name : str
+                    value : str
+        """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+
+        return self.set_parameter(params=params)
 
     # #############################################################
     #
@@ -155,6 +174,10 @@ class WSFocuser(object):
             Returns : dict
                 position : int
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+
+        return self.get_current_position()
 
     # #############################################################
     # Move
@@ -168,6 +191,16 @@ class WSFocuser(object):
                     step : int
             Returns : dict
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+        if self.device.info._is_moving:
+            return return_error(_("Focuser is moving"),{})
+        
+        step = params.get('step')
+        if step is None or not isinstance(step, int) or not 0 <= step <= self.device.info._max_steps:
+            return return_error(_("Invalid step value was provided"),{})
+
+        return self.device.move_step(params)
 
     async def move_to(self,params = {}) -> dict:
         """
@@ -177,8 +210,18 @@ class WSFocuser(object):
                     position : int
             Returns : dict
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+        if self.device.info._is_moving:
+            return return_error(_("Focuser is moving"),{})
 
-    async def get_move_status(self,params = {}) -> dict:
+        position = params.get('position')
+        if position is None or not isinstance(position,int) or not 0 <= position <= self.device.info._max_steps:
+            return return_error(_("Invalid target position was provided"),{})
+
+        return self.device.move_to(params)
+
+    async def get_movement_status(self,params = {}) -> dict:
         """
             Get the status of movement
             Args : None
@@ -186,14 +229,10 @@ class WSFocuser(object):
                 status : bool # True if the focuser is moving
                 position : int # current position
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
 
-    async def get_move_result(self,params = {}) -> dict:
-        """
-            Get the result of movement
-            Args : None
-            Returns : dict
-                position : int # current position
-        """
+        return self.device.get_movement_status()
 
     # #############################################################
     # Temperature
@@ -201,9 +240,25 @@ class WSFocuser(object):
 
     async def get_temperature(self , params = {}) -> dict:
         """
-            Get the current temperature of the focuser
+            Async get the current temperature of the focuser
             Args : None
             Returns : dict
                 temperature : float
             NOTE : This function need focuser supported
         """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.get_temperature()
+
+    async def get_current_position(self) -> dict:
+        """
+            Async get the current position of the focuser
+            Args : None
+            Return : dict
+                position : int
+        """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.get_current_position()
