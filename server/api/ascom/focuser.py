@@ -93,7 +93,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
             return return_error(_(f"Failed tp load focuser configuration"),{})
         self.info._is_connected = True
         self.info._type = "ascom"
-        return return_success(_("Connect to focuser successfully"),{"info":res.get("info")})
+        return return_success(_("Connect to focuser successfully"),{"info":self.info.get_dict()})
 
     def disconnect(self) -> dict:
         """
@@ -375,7 +375,9 @@ class AscomFocuserAPI(BasicFocuserAPI):
 
         try:
             status = self.device.IsMoving
+            self.info._is_moving = status
             position = self.device.Position
+            self.info._current_position = position
         except NotImplementedException as e:
             return return_error(_("Failed to get status of the operation"),{"error":e})
         except NotConnectedException as e:

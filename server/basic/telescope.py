@@ -112,7 +112,7 @@ class BasicTelescopeInfo(object):
     # Is the telescope at the home position
     _is_homed = False
 
-    async def get_dict(self , params = {}):
+    def get_dict(self , params = {}):
         """
             Return a dictionary containing all of the information
         """

@@ -18,8 +18,11 @@ Boston, MA 02110-1301, USA.
 
 """
 
+import asyncio
+import tornado.ioloop
+
 from utils.i18n import _
-from ..logging import logger ,return_error,return_success,return_warning
+from ..logging import logger ,return_error
 
 class WSFocuser(object):
     """
@@ -198,7 +201,11 @@ class WSFocuser(object):
         if step is None or not isinstance(step, int) or not 0 <= step <= self.device.info._max_steps:
             return return_error(_("Invalid step value was provided"),{})
 
-        return self.device.move_step(params)
+        res = self.device.move_step(params)
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.move_thread)
+
+        return res
 
     async def move_to(self,params = {}) -> dict:
         """
@@ -215,7 +222,25 @@ class WSFocuser(object):
         if position is None or not isinstance(position,int) or not 0 <= position <= self.device.info._max_steps:
             return return_error(_("Invalid target position was provided"),{})
 
-        return self.device.move_to(params)
+        res = self.device.move_to(params)
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.move_thread)
+
+        return res
+
+    async def move_thread(self) -> None:
+        """
+            Movement monitoring thread
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_movement_status()
+            
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
 
     async def get_movement_status(self,params = {}) -> dict:
         """
@@ -228,7 +253,11 @@ class WSFocuser(object):
         if self.device is None:
             return return_error(_("Focuser is not connected"))
 
-        return self.device.get_movement_status()
+        res = self.device.get_movement_status()
+
+        await self.ws.write_message(res)
+
+        return res
 
     # #############################################################
     # Temperature

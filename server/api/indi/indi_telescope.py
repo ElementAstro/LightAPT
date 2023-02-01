@@ -22,8 +22,8 @@ import PyIndi
 from PyIndi import BaseDevice
 
 from .indi_number_range_validation import check_number_range
-from .indi_base_device import IndiBaseDevice
-from .indiClientDef import IndiClient
+from .device import IndiBaseDevice
+from .client import IndiClient
 from .basic_indi_state_str import *
 from .indi_switch_operation import turn_on_multiple_switch_by_index, get_multiple_switch_info
 from .indi_number_range_validation import indi_number_single_get_value

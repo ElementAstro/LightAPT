@@ -29,7 +29,7 @@ class BasicFocuserInfo(object):
     _name : str # name of the camera
     _id : int # id of the camera
     _description : str
-    _timeout = 5
+    _timeout = 300
     _configration = "" # path to the configuration file
 
     _ipaddress : str # IP address only ASCOM and INDI

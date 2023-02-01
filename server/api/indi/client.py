@@ -27,24 +27,32 @@ from .misc import INDI_DEBUG,INDI_LOG_DATA
 from .basic_indi_state_str import strIPState, strISState
 from ...logging import logger
 
+indi_info_container = {}
+
 class IndiClient(PyIndi.BaseClient):
-    def __init__(self):
+    """
+        INDI Basic Client implementation
+    """
+
+    def __init__(self) -> None:
         super(IndiClient, self).__init__()
-        self.logger = logger
-        self.logger.info('creating an instance of IndiClient')
+        logger.info('creating an instance of IndiClient')
 
-    def newDevice(self, d):
-        self.logger.info("new device " + d.getDeviceName())
+    def newDevice(self, d) -> None:
+        logger.info("new device " + d.getDeviceName())
 
-    def newProperty(self, p):
+    def newProperty(self, p) -> None:
         if INDI_DEBUG:
-            self.logger.info("new property " + p.getName() + " for device " + p.getDeviceName())
+            logger.info("new property " + p.getName() + " for device " + p.getDeviceName())
+            """if not p.getDeviceName() in indi_info_container.keys():
+                indi_info_container[p.getDeviceName()] = {}
+            indi_info_container[p.getDeviceName()][p.getName()] = p.getLabel()"""
 
-    def removeProperty(self, p):
+    def removeProperty(self, p) -> None:
         if INDI_DEBUG:
-            self.logger.info("remove property " + p.getName() + " for device " + p.getDeviceName())
-
-    def newBLOB(self, bp):
+            logger.info("remove property " + p.getName() + " for device " + p.getDeviceName())
+            
+    def newBLOB(self, bp) -> None:
         global blob_event1, blob_event2
         print("new BLOB ", bp.name)
         if bp.name == 'CCD1':
@@ -52,36 +60,36 @@ class IndiClient(PyIndi.BaseClient):
         else:
             blob_event2.set()
 
-    def newSwitch(self, svp):
+    def newSwitch(self, svp) -> None:
         if INDI_LOG_DATA:
             this_str = f"new Switch {svp.name}  for device {svp.device} \n"
             for t in svp:
                 this_str += "       " + t.name + "(" + t.label + ")= " + strISState(t.s) + '\n'
-            self.logger.info(this_str)
+            logger.info(this_str)
 
-    def newNumber(self, nvp):
+    def newNumber(self, nvp) -> None:
         if INDI_LOG_DATA:
             this_str = f"new Number {nvp.name} for device {nvp.device} \n"
             for t in nvp:
                 this_str += "       " + t.name + "(" + t.label + ")= " + str(t.value) + '\n'
-            self.logger.info(this_str)
+            logger.info(this_str)
 
-    def newText(self, tvp):
+    def newText(self, tvp) -> None:
         if INDI_DEBUG:
-            self.logger.info("new Text " + tvp.name + " for device " + tvp.device)
+            logger.info("new Text " + tvp.name + " for device " + tvp.device)
 
-    def newLight(self, lvp):
+    def newLight(self, lvp) -> None:
         if INDI_DEBUG:
-            self.logger.info("new Light " + lvp.name + " for device " + lvp.device)
+            logger.info("new Light " + lvp.name + " for device " + lvp.device)
 
-    def newMessage(self, d, m):
+    def newMessage(self, d, m) -> None:
         if INDI_DEBUG:
-            self.logger.info("new Message " + d.messageQueue(m))
+            logger.info("new Message " + d.messageQueue(m))
 
-    def serverConnected(self):
-        self.logger.info("Server connected (" + self.getHost() + ":" + str(self.getPort()) + ")")
+    def serverConnected(self) -> None:
+        logger.info("Server connected (" + self.getHost() + ":" + str(self.getPort()) + ")")
 
-    def serverDisconnected(self, code):
-        self.logger.info("Server disconnected (exit code = " + str(code) + "," + str(self.getHost()) + ":" + str(
+    def serverDisconnected(self, code) -> None:
+        logger.info("Server disconnected (exit code = " + str(code) + "," + str(self.getHost()) + ":" + str(
             self.getPort()) + ")")
 

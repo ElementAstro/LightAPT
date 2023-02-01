@@ -18,6 +18,9 @@ Boston, MA 02110-1301, USA.
 
 """
 
+import asyncio
+import tornado.ioloop
+
 from utils.i18n import _
 from ..logging import logger,return_error
 
@@ -168,7 +171,30 @@ class WSFilterwheel(object):
         if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
-        return self.device.slew_to(params)
+        _id = params.get('id')
+        if _id is None or not isinstance(_id, int):
+            return return_error(_("Invalid filter id specified"))
+
+        res = self.device.slew_to(params)
+        if res.get("status") != 0:
+            return res
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.slew_thread,_id)
+
+        return res
+
+    async def slew_thread(self , target_id : int) -> None:
+        """
+            Slewing status monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_current_filter()
+            
+            if res.get("params").get('position') == target_id:
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
 
     # ###############################################################
     # Get all of the available filters

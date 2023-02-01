@@ -28,8 +28,8 @@ import tornado.ioloop
 import PyIndi
 from PyIndi import BaseDevice
 
-from .indi_base_device import IndiBaseDevice
-from .indiClientDef import IndiClient
+from .device import IndiBaseDevice
+from .client import IndiClient
 from .indi_switch_operation import turn_on_second_swtich, turn_on_first_swtich, \
     turn_on_multiple_switch_by_index,\
     get_multiple_switch_info
@@ -342,7 +342,7 @@ class INDICameraAPI(IndiBaseDevice):
         """
         if self.can_cool:
             ccd_cooler = self.this_device.getSwitch('CCD_COOLER')
-            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
+            ccd_cooler = turn_on_first_swtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
             return None
         else:
@@ -366,7 +366,7 @@ class INDICameraAPI(IndiBaseDevice):
         """
         if self.has_fan:
             ccd_cooler = self.this_device.getSwitch('TC_FAN_CONTROL')
-            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
+            ccd_cooler = turn_on_first_swtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
         else:
             return 'No Fan Available'
@@ -388,7 +388,7 @@ class INDICameraAPI(IndiBaseDevice):
         """
         if self.has_heater:
             ccd_cooler = self.this_device.getSwitch('TC_HEAT_CONTROL')
-            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
+            ccd_cooler = turn_on_first_swtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
         else:
             return 'No Heater Available'
@@ -510,7 +510,7 @@ class INDICameraAPI(IndiBaseDevice):
             if self.has_low_noise:
                 low_n = self.this_device.getSwitch("TC_LOW_NOISE_CONTROL")
                 if param_value == 1:
-                    turn_on_firsreswtich(low_n)
+                    turn_on_first_swtich(low_n)
                 else:
                     turn_on_second_swtich(low_n)
                 self.indi_client.sendNewSwitch(low_n)

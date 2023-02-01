@@ -96,7 +96,7 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
             return return_error(_(f"Failed tp load filterwheel configuration"),{})
         self.info._is_connected = True
         self.info._type = "ascom"
-        return return_success(_("Connect to filterwheel successfully"),{"info":res.get("info")})
+        return return_success(_("Connect to filterwheel successfully"),{"info":self.info.get_dict()})
 
     def disconnect(self) -> dict:
         """
@@ -176,11 +176,11 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
             logger.debug(_("Filterwheel API version : {}").format(self.info._api_version))
 
             self.info._filter_offset = self.device.FocusOffsets
-            logger.debug(_("Filterwheel Filter Offset : ").format(self.info._filter_offset))
+            logger.debug(_("Filterwheel Filter Offset : {}").format(self.info._filter_offset))
             self.info._filter_name = self.device.Names
-            logger.debug(_("Filterwheel Filter Name : ").format(self.info._filter))
+            logger.debug(_("Filterwheel Filter Name : {}").format(self.info._filter_name))
             self.info._current_position = self.device.Position
-            logger.debug(_("Filterwheel Current Position : ").format(self.info._current_position))
+            logger.debug(_("Filterwheel Current Position : {}").format(self.info._current_position))
 
         except NotConnectedException as e:
             return return_error(_("Remote device is not connected"),{"error":e})
@@ -242,25 +242,25 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
             Let the filterwheel slew to the specified position
             Args :
                 params : dict
-                    position : int
+                    id : int
             Return : dict
         """
         if not self.info._is_connected or self.device is None:
             return return_error(_("Filterwheel is not connected"),{})
 
-        position = params.get('position')
+        _id = params.get('id')
 
-        if position is None or not isinstance(position,int):
-            return return_error(_("Provided position is not valid"),{})
+        if _id is None or not isinstance(_id,int):
+            return return_error(_("Provided _id is not valid"),{})
 
-        if not 0 <= position <= len(self.info._filter_name):
-            return return_error(_("Provided position is out of range"),{})
+        if not 0 <= _id <= len(self.info._filter_name):
+            return return_error(_("Provided _id is out of range"),{})
 
         try:
-            self.device.Position = position
-            self.info._current_position = position
+            self.device.Position = _id
+            self.info._current_position = _id
         except InvalidValueException as e:
-            return return_error(_("Provided position is not valid"),{"error" : e})
+            return return_error(_("Provided id is not valid"),{"error" : e})
         except NotConnectedException as e:
             return return_error(_("Remote device is not connected"),{"error":e})
         except DriverException as e:
@@ -268,7 +268,7 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error":e})
 
-        return return_error(_("Filterwheel slewed to target position {} successfully").format(self.info._current_position),{})
+        return return_success(_("Filterwheel slewed to target position {} successfully").format(self.info._current_position),{})
 
     def get_filters_list(self) -> dict:
         """
@@ -291,7 +291,7 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error":e})
 
-    def get_current_position(self) -> dict:
+    def get_current_filter(self) -> dict:
         """
             Get the current position of the filterwheel
             Args : None
@@ -315,5 +315,6 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
 
         return return_success(_("Get the filterwheel current position successfully"),{
             "offset" : self.info._filter_offset,
-            "name" : self.info._filter_name
+            "name" : self.info._filter_name,
+            "position" : self.info._current_position
         })

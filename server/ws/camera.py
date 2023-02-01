@@ -191,10 +191,10 @@ class WSCamera(object):
             Returns : None
         """
         if self.device is None:
-            return (_("Camera is not connected , please do not execute get exposure status command"))
+            return return_error(_("Camera is not connected , please do not execute get exposure status command"))
 
         if not self.device.info._is_exposure:
-            return (_("Exposure is not started, please do not execute get exposure status command"))
+            return return_error(_("Exposure is not started, please do not execute get exposure status command"))
 
         res = self.device.get_exposure_status()
 
@@ -218,7 +218,7 @@ class WSCamera(object):
             NOTE : I'm not sure that whether this function should be called directly by client
         """
         if self.device is None:
-            return (_("Camera is not connected , please do not execute get exposure result command"))
+            return return_error(_("Camera is not connected , please do not execute get exposure result command"))
         
         res = self.device.get_exposure_result()
         res["type"] = "data"
@@ -234,8 +234,12 @@ class WSCamera(object):
             Return : dict
         """
         if self.device is None:
-            return (_("Camera is not connected , please do not execute cooling command"))
-        
+            return return_error(_("Camera is not connected , please do not execute cooling command"))
+
+        enable = params.get('enable')
+        if enable is None or not isinstance(enable, bool):
+            return return_error(_("Invalid enable value, please specify a correct value"))
+
         return self.device.cooling(params=params)
 
     async def cooling_to(self, params = {}) -> dict:
@@ -249,7 +253,30 @@ class WSCamera(object):
         if self.device is None:
             return (_("Camera is not connected , please do not execute cooling to command"))
 
-        return self.device.cooling_to(params=params)
+        temperature = params.get('temperature')
+        if temperature is None or not isinstance(temperature,float):
+            return return_error(_("Invalid temperature value provided"))
+
+        res = self.device.cooling_to(params=params)
+        if res.get('status') != 0:
+            return res
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.cooling_thread)
+
+        return return_success(_("Camera started to cooling to the target temperature started successfully"),{})
+
+    async def cooling_thread(self):
+        """
+            Thread to monitor temperature while the cooling_to function is running
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_cooling_status()
+            
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
 
     async def get_current_temperature(self , params = {}) -> dict:
         """
@@ -330,3 +357,28 @@ class WSCamera(object):
             return (_("Camera is not connected , please do not execute stop heat command"))
 
         return self.device.stop_heat(params=params)
+
+    async def call(self, params = {}) -> dict:
+        """
+            This function is inspired by GaoLe , though he just call other functions directly.
+            I wanted to cover these additional functions with a simple command.
+            Args:
+                params: dict
+                    command : str # the name of the additional function
+                    params : dict # the parameters for the function
+            Returns : dict # Returns the function called
+        """
+        _command = params.get('command')
+        if _command is None or not isinstance(_command,str):
+            return return_error(_("Invalid command parameter provided"))
+
+        try:
+            command = getattr(self.camera,_command)
+        except AttributeError as e:
+            return return_error(_("Camera command not available"),{"error":e})
+
+        try:
+            res = await command(params.get('params',{}))
+        except Exception as e:
+            return return_error(_("Error executing command"),{"error":e})
+        return res

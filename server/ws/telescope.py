@@ -18,6 +18,9 @@ Boston, MA 02110-1301, USA.
 
 """
 
+import asyncio
+import tornado.ioloop
+
 from utils.i18n import _
 from ..logging import logger , return_error,return_success,return_warning
 
@@ -71,7 +74,6 @@ class WSTelescope(object):
         _device_name = params.get('device_name')
 
         if _type is None or _device_name is None:
-            logger.error(_("Type or device name must be specified"))
             return return_error(_("Type or device name must be specified"))
         
         if _type == "indi":
@@ -81,7 +83,6 @@ class WSTelescope(object):
             from server.api.ascom.telescope import AscomTelescopeAPI
             self.device = AscomTelescopeAPI()
         else:
-            logger.error(_("Unknown device type : {}").format(_type))
             return return_error(_("Unknown device type"))
 
         return self.device.connect(params=params)
@@ -93,7 +94,6 @@ class WSTelescope(object):
             Returns : dict
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Telescope is not connected , please do not execute disconnect command"))
             return return_error(_("Telescope is not connected"))
         
         return self.device.disconnect()
@@ -107,7 +107,6 @@ class WSTelescope(object):
             NOTE : This function is just allowed to be called when the telescope had already connected
         """
         if self.device is None or not self.device.info._is_connected:
-            logger.warning(_("Telescope is not connected , please do not execute reconnect command"))
             return return_error(_("Telescope is not connected"))
 
         return self.device.reconnect()
@@ -119,8 +118,7 @@ class WSTelescope(object):
             Returns : dict
                 list : list # a list of telescopes available
         """
-        if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Telescope had already been connected , please do not execute scanning command"))
+        if self.device is not None:
             return return_error(_("Telescope has already been connected"))
 
         return self.device.scanning()
@@ -132,8 +130,7 @@ class WSTelescope(object):
             Returns : dict
                 info : dict # usually generated from get_dict() function
         """
-        if self.device is not None or self.device.info._is_connected:
-            logger.warning(_("Telescope is not connected , please do not execute polling command"))
+        if self.device is not None:
             return return_error(_("Telescope is not connected"))
 
         return self.device.polling()
@@ -155,8 +152,6 @@ class WSTelescope(object):
                 params : dict
                     ra : str or float
                     dec : str or float
-                    az : str or float
-                    alt : str or float
                     j2000 : bool
             Returns : dict
             NOTE : This function is non-blocking , it will return the results immediately 
@@ -166,6 +161,40 @@ class WSTelescope(object):
                     axis format like RA/DEC or AZ/ALT , j2000 means if the coordinates are in the
                     format of J2000 , if true , they need to be converted before send to telescope
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        _ra = params.get('ra')
+        _dec = params.get('dec')
+        _j2000 = params.get('j2000',False)
+
+        if _ra is None or not isinstance(_ra,(str,float)) or _dec is None or not isinstance(_dec,(str,float)):
+            return return_error(_("Invalid coordinates value of the target object"))
+
+        if _j2000:
+            pass # There need a convert function
+
+        res = self.device.goto(params=params)
+        if res.get("status") != 0:
+            return res
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.goto_thread)
+
+        return return_success(_("Telescope started goto operation successfully"))
+
+    async def goto_thread(self) -> None:
+        """
+            Goto status monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info.timeout:
+            res = await self.get_goto_status()
+            print(res)
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+        await self.ws.write_message(await self.get_goto_result()) 
 
     async def abort_goto(self,params = {}) -> dict:
         """
@@ -184,6 +213,14 @@ class WSTelescope(object):
                 ra : float # current ra
                 dec : float # current dec
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.get_goto_status()
+
+        await self.ws.write_message(res)
+
+        return res
 
     async def get_goto_result(self,params = {}) -> dict:
         """
@@ -193,6 +230,10 @@ class WSTelescope(object):
                 ra : str # current ra
                 dec : str # current dec
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.get_goto_result()
     
     # #############################################################
     # Park
@@ -205,6 +246,10 @@ class WSTelescope(object):
             Args : None
             Returns : dict
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.park()
 
     async def unpark(self,params = {}) -> dict:
         """
@@ -213,6 +258,10 @@ class WSTelescope(object):
             Returns : dict
             NOTE : If a telescope is not parked , please do not execute this function
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.unpark()
 
     async def get_park_position(self,params = {}) -> dict:
         """
@@ -222,6 +271,10 @@ class WSTelescope(object):
                 ra : str # ra of the parking position
                 dec : str # dec of the parking position
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.get_park_position()
 
     async def set_park_position(self,params = {}) -> dict:
         """
@@ -231,6 +284,15 @@ class WSTelescope(object):
                 dec : str or float # dec of the parking position
             Returns : dict
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        _ra = params.get('ra')
+        _dec = params.get('dec')
+        if _ra is None or not isinstance(_ra, (str, float)) or _dec is None or not isinstance(_dec, (str, float)):
+            return return_error(_("Invalid parking position values"))
+
+        return self.device.set_park_position(params=params)
 
     # #############################################################
     # Home
@@ -242,6 +304,45 @@ class WSTelescope(object):
             Args : None
             Returns : dict
         """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.home()
+        if res.get("status") != 0:
+            return res
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.home_thread)
+
+        return return_success(_("Telescope started to move to home successfully"))
+
+    async def home_thread(self) -> None:
+        """
+            Home operation monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info.timeout:
+            res = await self.get_home_status()
+            print(res)
+            if res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
+    async def get_home_status(self,params = {}) -> dict:
+        """
+            Async get the status of the home 
+            Args : None
+            Returns : dict
+                status : bool # wheather the telescpe is at home position
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.get_home_status()
+
+        await self.ws.write_message(res)
+
+        return res
 
     async def get_home_position(self,params = {}) -> dict:
         """

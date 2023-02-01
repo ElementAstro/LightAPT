@@ -23,7 +23,7 @@ import traceback
 import PyIndi
 from PyIndi import BaseDevice, Property
 
-from .indiClientDef import IndiClient
+from .client import IndiClient
 from .basic_indi_state_str import strISState, strIPState
 
 

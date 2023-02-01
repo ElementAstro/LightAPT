@@ -21,8 +21,8 @@ Boston, MA 02110-1301, USA.
 import PyIndi
 from PyIndi import BaseDevice
 
-from .indi_base_device import IndiBaseDevice
-from .indiClientDef import IndiClient
+from .device import IndiBaseDevice
+from .client import IndiClient
 
 class SingleFilter:
     def __init__(self, slot_number, filter_name):

@@ -389,7 +389,7 @@ class Device:
         self.__check_error(response)
         return response.json()["Value"]
 
-    def _put(self, attribute: str, tmo=5.0, **data) -> str:
+    def _put(self, attribute: str, tmo=10.0, **data) -> str:
         """Send an HTTP PUT request to an Alpaca server and check response for errors.
 
         Args:

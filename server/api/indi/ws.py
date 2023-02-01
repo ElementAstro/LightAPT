@@ -3,32 +3,90 @@ from .misc import *
 import sys
 from .indi_telescope import IndiTelescopeDevice
 from .camera import INDICameraAPI
-from .indi_focuser import IndiFocusDevice
-from .indi_filter_wheel import IndiFilterWheelDevice
+from .focuser import INDIFocuserAPI
+from .filterwheel import IndiFilterWheelDevice
 from .indi_common_printing import *
 from .indi_device_driver_name2type import get_driver_type_by_driver_name
 from ...logging import logger
+
 """
 todo, need to check how to call function by string
 """
 
 
-class PyIndiWebSocketWorker:
-    def __init__(self):
-        self.logger = logger
-        self.logger.info('creating an instance of IndiClient')
+class INDIWebsocketWorker(object):
+    """
+        INDI Websocket Worker
+    """
+
+    def __init__(self) -> None:
+        """
+            Initialize a new Indi WebSocket Worker
+            Args : None
+            Returns : None
+        """
+        # Initialize the INDI CLient
         self.my_indi_client = IndiClient()
-        self.my_indi_client.setServer("localhost", 7624)
-        if not (self.my_indi_client.connectServer()):
-            self.logger.error(
-                "No indiserver running on " + self.my_indi_client.getHost() + ":" + str(self.my_indi_client.getPort()) + " - Try to run")
-            self.logger.error("  indiserver ")
-            sys.exit(1)
-        self.telescope = None
+
         self.camera = None
+        self.telescope = None
         self.focuser = None
         self.filter_wheel = None
         self.phd2 = None
+
+    def __del__(self) -> None:
+        """
+            Destroy the INDI client when the server is went down.
+            Args : None
+            Returns : None
+        """
+        if self.my_indi_client.isServerConnected():
+            self.my_indi_client.disconnectServer()
+
+    def __str__(self) -> str:
+        """
+            Just return a string representation of the INDI client API
+        """
+        return "INDI Client API"
+
+    def connect_server(self , host = "127.0.0.1" , port = 7624) -> bool:
+        """
+            Connect to the INDI server using PyINDI
+            Args :
+                host : str # the hostname of the INDI server
+                port : int # the port number of the INDI server
+            Returns : None
+        """
+        # Bind the INDI host and port
+        self.my_indi_client.setServer("localhost", 7624)
+        # Connect to the INDI server
+        if self.my_indi_client.isServerConnected():
+            logger.warning("Server is already connected")
+            return True
+        if not self.my_indi_client.connectServer():
+            logger.error(
+                "No indiserver running on " + self.my_indi_client.getHost() + ":" + str(self.my_indi_client.getPort()) + " - Try to run")
+            return False
+        return True
+
+    def disconnect_server(self) -> bool:
+        """
+            Disconnect INDI server and should close the device connection too?
+            Args : None
+            Returns : None
+        """
+        if not self.my_indi_client.isServerConnected():
+            logger.warning("Server is not connected")
+            return False
+        self.my_indi_client.disconnectServer()
+        logger.info("Server is disconnected successfully")
+        return True
+
+    def is_connected(self) -> bool:
+        """
+            Returns True if the server is connected
+        """
+        return {"status":self.my_indi_client.isServerConnected()}
 
     def do_debug_command(self, commands):
         if commands[0] == 'print':
@@ -108,7 +166,7 @@ class PyIndiWebSocketWorker:
                 data = await func(*params, **kwargs)
             except Exception as e:
                 # catch errors
-                self.logger.warning(traceback.format_exc())
+                logger.warning(traceback.format_exc())
                 return_struct['type'] = 'error'
                 if len(e.args) >= 1:
                     return_struct['message'] = e.args[0]
@@ -129,92 +187,92 @@ class PyIndiWebSocketWorker:
                 return_struct['message'] = 'success'
                 return return_struct
         else:
-            self.logger.warning(f'instruction got wrong device name {device_name}')
+            logger.warning(f'instruction got wrong device name {device_name}')
             return_struct['message'] = f'!error! wrong device name {device_name}'
             return return_struct
 
-    def indi_fifo_start_device(self, device_type: str, device_name: str, start_or_stop: bool):
+    def indi_fifo_start_device(self, device_type: str, device_name: str, start_or_stop: bool) -> bool:
         """
-
-        :param device_type:
-        :param device_name:
-        :param start_or_stop:
-        :return: bool, true means connect success. false means connect error
+            Connect to the given device type and device name and return flag
+            :param device_type:
+            :param device_name:
+            :param start_or_stop:
+            :return: bool, true means connect success. false means connect error
         """
-        self.logger.info(f'got FIFO command {start_or_stop}, {device_type}, {device_name}')
+        logger.info(f'got FIFO command {start_or_stop}, {device_type}, {device_name}')
         if device_type == 'telescope':
             if start_or_stop:
                 if self.telescope is not None:  # close connection if there has an existing device.
-                    self.logger.info('disconnecting existing telescope...')
-                    self.telescope.disconnect(self.my_indi_client)
+                    logger.info('disconnecting existing telescope...')
+                    self.telescope.disconnect()
                 this_indi_device = self.my_indi_client.getDevice(device_name)
                 if not (this_indi_device):
-                    self.logger.error(f'Got Wrong device name {device_type} / {device_name}')
+                    logger.error(f'Got Wrong device name {device_type} / {device_name}')
                     return False
-                self.logger.info(f'connecting new device {device_type}, {device_name}')
+                logger.info(f'connecting new device {device_type}, {device_name}')
                 self.telescope = IndiTelescopeDevice(self.my_indi_client, this_indi_device)
-                self.telescope.connect(self.my_indi_client)
+                self.telescope.connect()
                 return True
             else:
                 if self.telescope:
-                    self.telescope.disconnect(self.my_indi_client)
+                    self.telescope.disconnect()
                     self.telescope = None
                 return True
         elif device_type == 'camera':
             if start_or_stop:
                 if self.camera:  # close connection if there has an existing device.
-                    self.logger.info('disconnecting existing camera...')
-                    self.camera.disconnect(self.my_indi_client)
+                    logger.info('disconnecting existing camera...')
+                    self.camera.disconnect()
                 this_indi_device = self.my_indi_client.getDevice(device_name)
                 if not (this_indi_device):
-                    self.logger.error(f'Got Wrong device name {device_type} / {device_name}')
+                    logger.error(f'Got Wrong device name {device_type} / {device_name}')
                     return False
-                self.logger.info(f'connecting new device {device_type}, {device_name}')
+                logger.info(f'connecting new device {device_type}, {device_name}')
                 self.camera = INDICameraAPI(self.my_indi_client, this_indi_device)
-                self.camera.connect(self.my_indi_client)
-                self.camera.check_camera_params()
+                self.camera.connect()
+                self.camera.get_configuration()
                 return True
             else:
                 if self.camera:
-                    self.camera.disconnect(self.my_indi_client)
+                    self.camera.disconnect()
                     self.camera = None
                 return True
         elif device_type == 'focus':
             if start_or_stop:
                 if self.focuser:  # close connection if there has an existing device.
-                    self.logger.info('disconnecting existing focuser...')
-                    self.focuser.disconnect(self.my_indi_client)
+                    logger.info('disconnecting existing focuser...')
+                    self.focuser.disconnect()
                 this_indi_device = self.my_indi_client.getDevice(device_name)
                 if not (this_indi_device):
-                    self.logger.error(f'Got Wrong device name {device_type} / {device_name}')
+                    logger.error(f'Got Wrong device name {device_type} / {device_name}')
                     return False
-                self.logger.info(f'connecting new device {device_type}, {device_name}')
-                self.focuser = IndiFocusDevice(self.my_indi_client, this_indi_device)
-                self.focuser.connect(self.my_indi_client)
+                logger.info(f'connecting new device {device_type}, {device_name}')
+                self.focuser = INDIFocuserAPI(self.my_indi_client, this_indi_device)
+                self.focuser.connect()
                 self.focuser.check_focus_param()
                 return True
             else:
                 if self.focuser:
-                    self.focuser.disconnect(self.my_indi_client)
+                    self.focuser.disconnect()
                     self.focuser = None
                 return True
         elif device_type == 'filter':
             if start_or_stop:
                 if self.filter_wheel:  # close connection if there has an existing device.
-                    self.logger.info('disconnecting existing filter wheel...')
-                    self.filter_wheel.disconnect(self.my_indi_client)
+                    logger.info('disconnecting existing filter wheel...')
+                    self.filter_wheel.disconnect()
                 this_indi_device = self.my_indi_client.getDevice(device_name)
                 if not (this_indi_device):
-                    self.logger.error(f'Got Wrong device name {device_type} / {device_name}')
+                    logger.error(f'Got Wrong device name {device_type} / {device_name}')
                     return False
-                self.logger.info(f'connecting new device {device_type}, {device_name}')
+                logger.info(f'connecting new device {device_type}, {device_name}')
                 self.filter_wheel = IndiFilterWheelDevice(self.my_indi_client, this_indi_device)
-                self.filter_wheel.connect(self.my_indi_client)
+                self.filter_wheel.connect()
                 self.filter_wheel.check_filter_param()
                 return True
             else:
                 if self.filter_wheel:
-                    self.filter_wheel.disconnect(self.my_indi_client)
+                    self.filter_wheel.disconnect()
                     self.filter_wheel = None
                 return True
         elif device_type == 'phd2':

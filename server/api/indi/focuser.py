@@ -22,14 +22,21 @@ import PyIndi
 from PyIndi import BaseDevice
 
 from .indi_switch_operation import turn_on_first_swtich, turn_on_second_swtich
-from .indi_base_device import IndiBaseDevice
-from .indiClientDef import IndiClient
+from .device import IndiBaseDevice
+from .client import IndiClient
 from .basic_indi_state_str import strIPState
 from .indi_number_range_validation import indi_number_single_get_value
 
 
-class IndiFocusDevice(IndiBaseDevice):
+class INDIFocuserAPI(IndiBaseDevice):
     def __init__(self, indi_client: IndiClient, indi_device: BaseDevice = None):
+        """
+            Initialize a new INDIFocuser object
+            Args:
+                indi_client: IndiClient # a initialized IndiClient
+                indi_device: IndiDevice
+            Returns : None
+        """
         super().__init__(indi_client, indi_device)
         self.small_step = 100
         self.large_step = 1000
@@ -39,17 +46,21 @@ class IndiFocusDevice(IndiBaseDevice):
         self.has_temperature = False
 
     """
-    useful keyword
-    FOCUS_MOTION, move in or out
-    FOCUS_SPEED, may useless
-    REL_FOCUS_POSITION, move relative
-    ABS_FOCUS_POSITION, move to position
-    FOCUS_MAX, max focus number
-    FOCUS_BACKLASH_TOGGLE, backslash setting
-    FOCUS_BACKLASH_STEPS, backslash value
-    
+        useful keyword
+        FOCUS_MOTION, move in or out
+        FOCUS_SPEED, may useless
+        REL_FOCUS_POSITION, move relative
+        ABS_FOCUS_POSITION, move to position
+        FOCUS_MAX, max focus number
+        FOCUS_BACKLASH_TOGGLE, backslash setting
+        FOCUS_BACKLASH_STEPS, backslash value
     """
-    def check_focus_param(self):
+    def get_configuration(self) -> None:
+        """
+            Get all the configuration values of the current focuser
+            Args : None
+            Returns : None
+        """
         # has focus speed?
         t_s = self.this_device.getNumber('FOCUS_SPEED')
         if (t_s):

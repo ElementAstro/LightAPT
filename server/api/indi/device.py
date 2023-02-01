@@ -20,7 +20,7 @@ Boston, MA 02110-1301, USA.
 
 from PyIndi import BaseDevice
 import PyIndi
-from .indiClientDef import IndiClient
+from .client import IndiClient
 
 from utils.i18n import _
 from ...logging import logger

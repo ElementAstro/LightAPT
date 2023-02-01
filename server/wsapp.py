@@ -184,32 +184,33 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             try:
                 _command = getattr(self.camera,command)
             except AttributeError as e:
-                logger.error(_("Camera command not available : {}").format(e))
                 return return_error(_("Camera command not available"),{"error":e})
         elif device == "telescope":
             try:
                 _command = getattr(self.telescope,command)
             except AttributeError as e:
-                logger.error(_("Telescope command not available : {}").format(e))
                 return return_error(_("Telescope command not available"),{"error":e})
         elif device == "focuser":
             try:
                 _command = getattr(self.focuser,command)
             except AttributeError as e:
-                logger.error(_("Focuser command not available : {}").format(e))
                 return return_error(_("Focuser command not available"),{"error":e})
         elif device == "filterwheel":
             try:
                 _command = getattr(self.filterwheel,command)
             except AttributeError as e:
-                logger.error(_("Filterwheel command not available : {}").format(e))
                 return return_error(_("Filterwheel command not available"),{"error":e})
         elif device == "guider":
-            pass
+            try:
+                _command = getattr(self.guider,command)
+            except AttributeError as e:
+                return return_error(_("Guider command not available"),{"error":e})
         elif device == "sovler":
-            pass
+            try:
+                _command = getattr(self.sovler,command)
+            except AttributeError as e:
+                return return_error(_("Solver command not available"),{"error":e})
         else:
-            logger.error(_("Unknown device type specified : {}").format(device))
             return return_error(_("Unknown device type"))
 
         res = {
@@ -309,7 +310,9 @@ from .webserver import IndexHtml,ClientHtml,DesktopHtml,DebugHtml,WebSSHHtml
 from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml
 from .webserver import DesktopBrowserHtml,DesktopStoreHtml,DesktopSystemHtml
 from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
-                        INDIFIFODeviceStartStop,INDIFIFOGetAllDevice)
+                        INDIFIFODeviceStartStop,INDIFIFOGetAllDevice,
+                        INDIServerConnect,INDIServerDisconnect,INDIServerIsConnected
+                        )
 
 def make_server() -> tornado.web.Application:
     """
@@ -337,11 +340,14 @@ def make_server() -> tornado.web.Application:
             (r"/novnc",NoVNCHtml),
             (r"/skymap",SkymapHtml),
 
-            (r"/debug/indi",INDIDebugHtml),
-            (r"/ws/debugging/", INDIDebugWebSocket),
-            (r"/ws/indi_client/", INDIClientWebSocket),
-            (r"/FIFO/([^/]+)/([^/]+)/([^/]+)/", INDIFIFODeviceStartStop),
-            (r"/get/all/devices/", INDIFIFOGetAllDevice),
+            (r"/indi/debug/",INDIDebugHtml),
+            (r"/indi/ws/debugging/", INDIDebugWebSocket),
+            (r"/indi/ws/indi_client/", INDIClientWebSocket),
+            (r"/indi/FIFO/([^/]+)/([^/]+)/([^/]+)/", INDIFIFODeviceStartStop),
+            (r"/indi/get/all/devices/", INDIFIFOGetAllDevice),
+            (r'/indi/server/connect/', INDIServerConnect),
+            (r'/indi/server/disconnect/', INDIServerDisconnect),
+            (r'/indi/server/connected/',INDIServerIsConnected)
         ],
         template_path=os.path.join(
             os.getcwd(),"client","templates"
