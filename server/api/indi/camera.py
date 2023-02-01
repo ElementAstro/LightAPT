@@ -38,81 +38,230 @@ from .indi_number_range_validation import check_number_range, indi_number_single
 
 from .misc import blob_event2, blob_event1
 
+from utils.i18n import _
 from ...logging import logger
 
 GAIN_Keywords = ["CCD_GAIN", "CCD_CONTROLS"]
 
+class INDICameraAPI(IndiBaseDevice):
+    """
+        INDI Camera API Interface
+    """
 
-class IndiCameraDevice(IndiBaseDevice):
-    def __init__(self, indi_client: IndiClient, indi_device: BaseDevice = None):
+    def __init__(self, indi_client: IndiClient, indi_device: BaseDevice = None) -> None:
+        """
+            Initialize IndiCamera object
+            Args:
+                indi_client: IndiClient
+                indi_device: IndiDevice
+            Return : None
+        """
         super().__init__(indi_client, indi_device)
         # telescope basic parameters here, if necessary
         self.can_cool = False
+        self.can_binning = False
+        self.can_gain = False
+        self.can_offset = False
+        self.can_abort = False
+        self.can_subframe = False
+        self.can_rotation = False
+
+        self.has_shutter = False
         self.has_fan = False
         self.has_heater = False
-        self.has_binning = False
         self.has_hcg = False
         self.has_low_noise = False
         self.gain_type = 0
+
+        self._is_connected = False
 
         self.fits_save_path = Path.home() / 'Pictures'
         self.subframe_counting = 0
         self.save_file_name_pattern = '{date}/{target_name}_{filter}_{exposure}_{date_time}_{HFR}_{guiding_RMS}_{count}.fits'
 
-        self.indi_client.setBLOBMode(PyIndi.B_ALSO, self.this_device.getDeviceName(), "CCD1")
+        self.indi_client.setBLOBMode(
+            PyIndi.B_ALSO, self.this_device.getDeviceName(), "CCD1")
         # important flag
         self.in_exposure = False  # flag for camera is working
 
-    def check_camera_params(self):
+    def __del__(self) -> None:
         """
-        called directly after connection.
-        :return:
+            Destructor method
+            Args : None
+            Returns : None
         """
+        if self._is_connected:
+            self.disconnect()
+
+    def __str__(self) -> str:
+        """
+            Just a string representation
+            Args : None
+            Returns : str
+        """
+        return "INDI Camera API Interface written by GaoLe"
+
+    def get_configuration(self) -> None:
+        """
+            Get the configuration of the camera after connection established
+            Args : None
+            Returns : None
+        """
+        # check gain
+        res = self.this_device.getNumber("CCD_GAIN")
+        if (res):
+            self.can_gain = True
+        else:
+            self.can_gain = False
+        # check offset
+        res = self.this_device.getNumber("CCD_OFFSET")
+        if (res):
+            self.can_offset = True
+        else:
+            self.can_offset = False
+        # check binning
+        res = self.this_device.getNumber("CCD_BINNING")
+        if (res):
+            self.can_binning = True
+        else:
+            self.can_binning = False
         # check cool
         time.sleep(1)
-        t_s = self.this_device.getSwitch('CCD_COOLER')
-        if (t_s):
+        res = self.this_device.getSwitch('CCD_COOLER')
+        if (res):
             self.can_cool = True
         else:
             self.can_cool = False
+        # check abort
+        res = self.this_device.getSwitch('CCD_ABORT')
+        if (res):
+            self.can_abort = True
+        else:
+            self.can_abort = False
+        # check subframe
+        res = self.this_device.getSwitch('CCD_SUBFRAME')
+        if (res):
+            self.can_subframe = True
+        else:
+            self.can_subframe = False
+        # check rotation
+        res = self.this_device.getNumber('CCD_ROTATION')
+        if (res):
+            self.can_rotation = True
+        else:
+            self.can_rotation = False
+
+        # #################################################################
+        # Following parameters are for toupcam
+        # #################################################################
 
         # check fan
-        t_s = self.this_device.getSwitch('TC_FAN_CONTROL')
-        if (t_s):
+        res = self.this_device.getSwitch('TC_FAN_CONTROL')
+        if (res):
             self.has_fan = True
         else:
             self.has_fan = False
 
         # check heat
-        t_s = self.this_device.getSwitch('TC_HEAT_CONTROL')
-        if (t_s):
+        res = self.this_device.getSwitch('TC_HEAT_CONTROL')
+        if (res):
             self.has_heater = True
         else:
             self.has_heater = False
-        # check gain keyword type 
+        # check gain keyword type
         for (index, one_keyword) in enumerate(GAIN_Keywords):
-            t_s = self.this_device.getNumber(one_keyword)
-            if (t_s):
+            res = self.this_device.getNumber(one_keyword)
+            if (res):
                 self.gain_type = index
-        # check binning
-        t_s = self.this_device.getNumber("CCD_BINNING")
-        if (t_s):
-            self.has_binning = True
-        else:
-            self.has_binning = False
+        
         # check hcg
-        t_s = self.this_device.getSwitch("TC_HCG_CONTROL")
-        if (t_s):
+        res = self.this_device.getSwitch("TC_HCG_CONTROL")
+        if (res):
             self.has_hcg = True
         else:
             self.has_hcg = False
-        t_s = self.this_device.getSwitch("TC_LOW_NOISE_CONTROL")
-        if (t_s):
+        res = self.this_device.getSwitch("TC_LOW_NOISE_CONTROL")
+        if (res):
             self.has_low_noise = True
         else:
             self.has_low_noise = False
 
-    async def set_cool_target_temperature(self, target_temperature: float, **kwargs):
+    async def start_exposure(self, exposure: float, *args, **kwargs) -> None:
+        """
+            Start a single exposure
+            :param exposure: must have
+            :param args:  args[0] is subframe count, if no subframe count is given, system will use self_increase count
+            :param kwargs:
+            :return:
+        """
+        if self.in_exposure:
+            return 'Exposure is in progress. Cannot start exposure now!'
+
+        ccd_exposure = self.this_device.getNumber("CCD_EXPOSURE")
+        ccd_exposure[0].value = exposure
+        blob_event1.clear()
+        self.indi_client.sendNewNumber(ccd_exposure)
+        self.in_exposure = True
+        logger.info(f'device camera, start exposure {exposure} seconds')
+        ccd_ccd1 = self.this_device.getBLOB('CCD1')
+
+        if len(args) >= 1:
+            kwargs['count'] = args[0]
+        kwargs['exposure'] = exposure
+        kwargs['ccd1'] = ccd_ccd1
+        tornado.ioloop.IOLoop.instance().add_callback(
+            self.after_exposure_finish, *args, **kwargs)
+
+    async def after_exposure_finish(self, *args, **kwargs):
+        try:
+            await asyncio.wait_for(blob_event1.wait(), timeout=kwargs['exposure']+2)
+            self.in_exposure = False
+            logger.info(
+                f'device camera, ended exposure {kwargs["exposure"]} seconds')
+            for blob in kwargs['ccd1']:
+                fits = blob.getblobdata()
+                kwargs['HFR'] = 0  # to detect HFR value
+                to_save_file_path = self.__translate_parameters_formatting(
+                    **kwargs)
+                with open(str(to_save_file_path), 'wb') as f:
+                    f.write(fits)
+            kwargs['ws_instance'].write_message(json.dumps({
+                'type': 'signal',
+                'message': 'Exposure Finished!',
+                'data': None,
+            }))
+        except TimeoutError:
+            blob_event1.clear()
+            self.in_exposure = False
+            kwargs['ws_instance'].write_message(json.dumps({
+                'type': 'signal',
+                'message': 'ERROR! Exposure Time Out Error!',
+                'data': None,
+            }))
+
+    async def abort_exposure(self, **kwargs):
+        """
+            Async abort the exposure operation
+            Args : None
+            Returns : None
+        """
+        if not self.in_exposure:
+            return 'No exposure in progress!'
+        else:
+            abort_exposure = self.this_device.getSwitch('CCD_ABORT_EXPOSURE')
+            abort_exposure = turn_on_multiple_switch_by_index(
+                abort_exposure, 0)
+            self.indi_client.sendNewSwitch(abort_exposure)
+            self.in_exposure = False
+            return 'Exposure aborted!'
+
+    async def cooling_to(self, target_temperature: float, **kwargs):
+        """
+            Let the camera cool to the target temperature
+            Args :
+                target_temperature : float
+            Returns : None
+        """
         temperature = self.this_device.getNumber("CCD_TEMPERATURE")
         if check_number_range(temperature, 0, target_temperature):
             temperature[0].value = target_temperature
@@ -121,19 +270,19 @@ class IndiCameraDevice(IndiBaseDevice):
         else:
             raise ValueError("Temperature is out of range!")
 
-    async def get_static_info(self, **kwargs):
-        # pixel size, 
+    async def gerestatic_info(self, **kwargs):
+        # pixel size,
         ccd_info = self.this_device.getNumber("CCD_INFO")
         return indi_property_2_json(ccd_info)
 
-    async def get_set_params(self, **kwargs):
+    async def gereset_params(self, **kwargs):
         # gain offset, binning
         ret_json = {}
         gain = self.this_device.getNumber(GAIN_Keywords[self.gain_type])
         ret_json['gain'] = indi_number_single_get_value(gain[0])
         offset = self.this_device.getNumber("CCD_OFFSET")
         ret_json['offset'] = indi_number_single_get_value(offset[0])
-        if self.has_binning:
+        if self.can_binning:
             binning = self.this_device.getNumber("CCD_BINNING")
             ret_json['binning'] = indi_number_single_get_value(binning[0])
         else:
@@ -193,7 +342,7 @@ class IndiCameraDevice(IndiBaseDevice):
         """
         if self.can_cool:
             ccd_cooler = self.this_device.getSwitch('CCD_COOLER')
-            ccd_cooler = turn_on_first_swtich(ccd_cooler)
+            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
             return None
         else:
@@ -217,7 +366,7 @@ class IndiCameraDevice(IndiBaseDevice):
         """
         if self.has_fan:
             ccd_cooler = self.this_device.getSwitch('TC_FAN_CONTROL')
-            ccd_cooler = turn_on_first_swtich(ccd_cooler)
+            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
         else:
             return 'No Fan Available'
@@ -239,7 +388,7 @@ class IndiCameraDevice(IndiBaseDevice):
         """
         if self.has_heater:
             ccd_cooler = self.this_device.getSwitch('TC_HEAT_CONTROL')
-            ccd_cooler = turn_on_first_swtich(ccd_cooler)
+            ccd_cooler = turn_on_firsreswtich(ccd_cooler)
             self.indi_client.sendNewSwitch(ccd_cooler)
         else:
             return 'No Heater Available'
@@ -272,6 +421,7 @@ class IndiCameraDevice(IndiBaseDevice):
     
     '{date}/{target_name}_{filter}_{exposure}_{date_time}_{HFR}_{guiding_RMS}_{count}.fits'
     """
+
     def __translate_parameters_formatting(self, **kwargs):
         if 'target_info' in kwargs.keys():
             target_name = kwargs['target_info']['name']
@@ -294,77 +444,26 @@ class IndiCameraDevice(IndiBaseDevice):
         now_str = now.strftime('%Y-%m-%d-%H-%M-%S')
         date_str = now.strftime('%Y-%m-%d')
         file_name = self.save_file_name_pattern.format(
-            target_name=target_name, count=count, filter=filter, guiding_RMS=guiding_RMS, HFR=kwargs['HFR'],
-            date=date_str, date_time=now_str, exposure=kwargs['exposure_time']
+            target_name=target_name, count=count, filter=filter, guiding_RMS=guiding_RMS, HFR=kwargs[
+                'HFR'],
+            date=date_str, date_time=now_str, exposure=kwargs['exposure']
         )
         file_path = self.fits_save_path / file_name
         file_path.parent.mkdir(parents=True, exist_ok=True)
         if file_path.exists():
-            new_file_path = file_path.parent / file_name.replace('.fits', '_1.fits')
+            new_file_path = file_path.parent / \
+                file_name.replace('.fits', '_1.fits')
             file_path = new_file_path
         return file_path
 
-    async def start_single_exposure(self, exposure_time: float, *args, **kwargs):
-        """
-
-        :param exposure_time: must have
-        :param args:  args[0] is subframe count, if no subframe count is given, system will use self_increase count
-        :param kwargs:
-        :return:
-        """
-        if self.in_exposure:
-            return 'Exposure is in progress. Cannot start exposure now!'
-
-        ccd_exposure = self.this_device.getNumber("CCD_EXPOSURE")
-        ccd_exposure[0].value = exposure_time
-        blob_event1.clear()
-        self.indi_client.sendNewNumber(ccd_exposure)
-        self.in_exposure = True
-        logger.info(f'device camera, start exposure {exposure_time} seconds')
-        ccd_ccd1 = self.this_device.getBLOB('CCD1')
-
-        if len(args) >= 1:
-            kwargs['count'] = args[0]
-        kwargs['exposure_time'] = exposure_time
-        kwargs['ccd1'] = ccd_ccd1
-        tornado.ioloop.IOLoop.instance().add_callback(self.after_exposure_finish, *args, **kwargs)
-
-    async def after_exposure_finish(self, *args, **kwargs):
-        try:
-            await asyncio.wait_for(blob_event1.wait(), timeout=kwargs['exposure_time']+2)
-            self.in_exposure = False
-            logger.info(f'device camera, ended exposure {kwargs["exposure_time"]} seconds')
-            for blob in kwargs['ccd1']:
-                fits = blob.getblobdata()
-                kwargs['HFR'] = 0  # to detect HFR value
-                to_save_file_path = self.__translate_parameters_formatting(**kwargs)
-                with open(str(to_save_file_path), 'wb') as f:
-                    f.write(fits)
-            kwargs['ws_instance'].write_message(json.dumps({
-                'type': 'signal',
-                'message': 'Exposure Finished!',
-                'data': None,
-            }))
-        except TimeoutError:
-            blob_event1.clear()
-            self.in_exposure = False
-            kwargs['ws_instance'].write_message(json.dumps({
-                'type': 'signal',
-                'message': 'ERROR! Exposure Time Out Error!',
-                'data': None,
-            }))
-
-    async def abort_exposure(self, **kwargs):
-        if not self.in_exposure:
-            return 'No exposure in progress!'
-        else:
-            abort_exposure = self.this_device.getSwitch('CCD_ABORT_EXPOSURE')
-            abort_exposure = turn_on_multiple_switch_by_index(abort_exposure, 0)
-            self.indi_client.sendNewSwitch(abort_exposure)
-            self.in_exposure = False
-            return 'Exposure aborted!'
-
     async def set_number_parameters(self, param_name: str, param_value, *args, **kwargs):
+        """
+            Set the number of the specified parameter
+            Args :
+                param_name : str # the name of the parameter
+                param_value : str # the value of the parameter
+            Returns : None
+        """
         if param_name == 'gain':
             gain = self.this_device.getNumber(GAIN_Keywords[self.gain_type])
             if self.gain_type == 0:
@@ -386,7 +485,7 @@ class IndiCameraDevice(IndiBaseDevice):
                 raise ValueError("offset value is out of range!")
             self.indi_client.sendNewNumber(offset)
         elif param_name == 'binning':
-            if self.has_binning:
+            if self.can_binning:
                 binning = self.this_device.getNumber("CCD_BINNING")
                 if check_number_range(binning, 0, param_value):
                     binning[0].value = param_value
@@ -411,7 +510,7 @@ class IndiCameraDevice(IndiBaseDevice):
             if self.has_low_noise:
                 low_n = self.this_device.getSwitch("TC_LOW_NOISE_CONTROL")
                 if param_value == 1:
-                    turn_on_first_swtich(low_n)
+                    turn_on_firsreswtich(low_n)
                 else:
                     turn_on_second_swtich(low_n)
                 self.indi_client.sendNewSwitch(low_n)

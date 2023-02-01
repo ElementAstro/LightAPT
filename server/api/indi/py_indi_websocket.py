@@ -2,7 +2,7 @@ import traceback
 from .misc import *
 import sys
 from .indi_telescope import IndiTelescopeDevice
-from .indi_camera import IndiCameraDevice
+from .camera import INDICameraAPI
 from .indi_focuser import IndiFocusDevice
 from .indi_filter_wheel import IndiFilterWheelDevice
 from .indi_common_printing import *
@@ -170,7 +170,7 @@ class PyIndiWebSocketWorker:
                     self.logger.error(f'Got Wrong device name {device_type} / {device_name}')
                     return False
                 self.logger.info(f'connecting new device {device_type}, {device_name}')
-                self.camera = IndiCameraDevice(self.my_indi_client, this_indi_device)
+                self.camera = INDICameraAPI(self.my_indi_client, this_indi_device)
                 self.camera.connect(self.my_indi_client)
                 self.camera.check_camera_params()
                 return True

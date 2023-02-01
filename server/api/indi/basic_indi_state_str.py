@@ -22,6 +22,8 @@ import PyIndi
 
 # Fancy printing of INDI states
 # Note that all INDI constants are accessible from the module as PyIndi.CONSTANTNAME
+
+
 def strISState(s):
     if (s == PyIndi.ISS_OFF):
         return "Off"

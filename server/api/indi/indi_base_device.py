@@ -22,9 +22,22 @@ from PyIndi import BaseDevice
 import PyIndi
 from .indiClientDef import IndiClient
 
+from utils.i18n import _
+from ...logging import logger
 
 class IndiBaseDevice:
-    def __init__(self, indi_client: IndiClient, indi_device: BaseDevice = None):
+    """
+        INDI Basic Device Interface
+    """
+
+    def __init__(self, indi_client: IndiClient, indi_device: BaseDevice = None) -> None:
+        """
+            Initialize a new IndiBaseDevice object
+            Args:
+                indi_client: IndiClient , a initialized IndiClient
+                indi_device: IndiDevice
+            Return : None
+        """
         self.this_device = indi_device
         self.indi_client = indi_client
         if self.this_device is not None:
@@ -32,31 +45,40 @@ class IndiBaseDevice:
         else:
             self.this_connection_switch = None
 
-    def setup_device(self, indi_device: BaseDevice):
-        if indi_device is None:
-            pass  # show log
-        else:
-            self.this_device = indi_device
-            self.this_connection_switch = self.this_device.getSwitch("CONNECTION")
-
-    def connect(self, indiclient):
+    def connect(self) -> None:
+        """
+            Connect to the device
+            Args : None
+            Return : None
+        """
         if self.this_device is None:
-            pass
+            logger.warning(_("No device specified"))
         elif not (self.this_device.isConnected()):
             # Property vectors are mapped to iterable Python objects
             # Hence we can access each element of the vector using Python indexing
             # each element of the "CONNECTION" vector is a ISwitch
             self.this_connection_switch[0].s = PyIndi.ISS_ON  # the "CONNECT" switch
-            self.this_connection_switch[1].s = PyIndi.ISS_OFF  # the "DISCONNECT" switch
-            indiclient.sendNewSwitch(self.this_connection_switch)  # send this new value to the device
+            # the "DISCONNECT" switch
+            self.this_connection_switch[1].s = PyIndi.ISS_OFF  
+            # send this new value to the device
+            self.indi_client.sendNewSwitch(self.this_connection_switch)
+        else:
+            logger.info(_("Device had already been connected"))
 
-    def disconnect(self, indiclient):
+    def disconnect(self) -> None:
+        """
+            Disconnects the INDI server
+            Args : None
+            Return : None
+        """
         if self.this_device is None:
-            pass
+            logger.warning(_("No INDI device specified"))
         elif self.this_device.isConnected():
             # Property vectors are mapped to iterable Python objects
             # Hence we can access each element of the vector using Python indexing
             # each element of the "CONNECTION" vector is a ISwitch
             self.this_connection_switch[0].s = PyIndi.ISS_OFF  # the "CONNECT" switch
             self.this_connection_switch[1].s = PyIndi.ISS_ON  # the "DISCONNECT" switch
-            indiclient.sendNewSwitch(self.this_connection_switch)  # send this new value to the device
+            self.indi_client.sendNewSwitch(self.this_connection_switch)  # send this new value to the device
+        else:
+            logger.info(_("Device is not connected"))
