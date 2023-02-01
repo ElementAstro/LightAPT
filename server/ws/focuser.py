@@ -63,7 +63,7 @@ class WSFocuser(object):
             Returns : dict
                 info : dict # BasicaFocuserInfo object
         """
-        if self.device is not None:
+        if self.device is None:
             logger.info(_("Disconnecting from existing focuser ..."))
             self.disconnect()
 
@@ -115,7 +115,7 @@ class WSFocuser(object):
             Returns : dict
                 list : list # a list of focusers available
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser has already been connected"))
 
         return self.device.scanning()
@@ -127,7 +127,7 @@ class WSFocuser(object):
             Returns : dict
                 info : dict # usually generated from get_dict() function
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.device.polling()
@@ -139,7 +139,7 @@ class WSFocuser(object):
                 params : dict
                     name : str # name of the parameter
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.get_parameter(params=params)
@@ -152,7 +152,7 @@ class WSFocuser(object):
                     name : str
                     value : str
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.set_parameter(params=params)
@@ -174,7 +174,7 @@ class WSFocuser(object):
             Returns : dict
                 position : int
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.get_current_position()
@@ -191,10 +191,8 @@ class WSFocuser(object):
                     step : int
             Returns : dict
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
-        if self.device.info._is_moving:
-            return return_error(_("Focuser is moving"),{})
         
         step = params.get('step')
         if step is None or not isinstance(step, int) or not 0 <= step <= self.device.info._max_steps:
@@ -210,10 +208,8 @@ class WSFocuser(object):
                     position : int
             Returns : dict
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
-        if self.device.info._is_moving:
-            return return_error(_("Focuser is moving"),{})
 
         position = params.get('position')
         if position is None or not isinstance(position,int) or not 0 <= position <= self.device.info._max_steps:
@@ -229,7 +225,7 @@ class WSFocuser(object):
                 status : bool # True if the focuser is moving
                 position : int # current position
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.device.get_movement_status()
@@ -246,7 +242,7 @@ class WSFocuser(object):
                 temperature : float
             NOTE : This function need focuser supported
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.device.get_temperature()
@@ -258,7 +254,7 @@ class WSFocuser(object):
             Return : dict
                 position : int
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Focuser is not connected"))
 
         return self.device.get_current_position()

@@ -41,7 +41,7 @@ logger.addHandler(console_handle)
 logger.addHandler(file_handle)
 
 # Set logger level | 设置日志级别
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def return_success(message : str , params = {}) -> dict:
     """

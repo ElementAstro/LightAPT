@@ -25,3 +25,7 @@ As another very famous solver , ASTAP provides some command line interface for o
 -update  {update the FITS header with the found solution. Jpg, png, tiff will be written as fits}
 -wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}
 `
+
+Example:
+    Depends on astap command line tool
+    astap_cli -f apod2.jpg --ra 05:38:18 -z 0  -speed -spd -02:45:19 -wcs

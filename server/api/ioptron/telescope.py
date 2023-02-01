@@ -2,7 +2,7 @@
 
 """
 
-Copyright(c) 2022-2023 Max Qian  <astroair.cn>
+Copyright(c) 2022-2023 Max Qian  <lightapt.com>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -18,21 +18,3 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from flask import render_template,request,Flask
-from flask_login import login_required
-
-def create_search_template(app : Flask):
-    """
-        Create a search template
-    """
-
-    @app.route('/search/api/<target_id>',methods=['GET'])
-    @app.route('/search/api/<target_id>/',methods=['GET'])
-    @login_required
-    def search_target(target_id : str):
-        """
-            Search a target by target id
-            Args:
-                target_id : str # Like 'm1' or 'M1'
-            Returns:
-        """

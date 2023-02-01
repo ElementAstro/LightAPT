@@ -1,15 +1,28 @@
-DEBUG = False
+# coding=utf-8
 
+"""
+
+Copyright(c) 2022-2023 Max Qian  <lightapt.com>
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License version 3 as published by the Free Software Foundation.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+You should have received a copy of the GNU Library General Public License
+along with this library; see the file COPYING.LIB.  If not, write to
+the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301, USA.
+
+"""
+
+import ephem, numpy, datetime, time
 import server.plugins.gps3 as gps3
-from flask import jsonify
-import sys, ephem, numpy, datetime, time
-
-from server.webapp import app
-
 import server.config as c
 from utils.i18n import _
-from obsolete.lightlog import lightlog
-logger = lightlog(__name__)
+from ..logging import logger
 
 class gpsTimeout(Exception):
     """
@@ -372,15 +385,3 @@ def refresh() -> dict:
             'neptune_az': "%.2f°" % numpy.degrees(ephem.Neptune(home).az),
             'neptune_alt': "%.2f°" % numpy.degrees(ephem.Neptune(home).alt)
         }
-
-def create_web_ephem(app) -> None:
-    """
-        Create a web ephem endpoint for the given application
-        Args : 
-            app :Flask application
-        Returns : None
-    """
-    @app.route('/tools/api/starinfo',methods=['GET'])
-    @app.route('/tools/api/starinfo/',methods=['GET'])
-    def starinfo():
-        return jsonify(refresh())

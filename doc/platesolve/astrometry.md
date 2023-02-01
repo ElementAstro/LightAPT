@@ -147,3 +147,7 @@ The following options are valid for xylist inputs only:
   -a / --sort-ascending: sort in ascending order (smallest first); default is
           descending order
 `
+Example:
+        solve-field demo/apod2.jpg --overwrite --no-plots --scale-units degwidth --ra 05:38:18 --dec -02:45:19  --radius 2 --no-verify --downsample 2 --depth 20,30,40 --scale-low 3.3 --scale-high 4.5 --width 800 --height 600
+
+        This is the fastest way to solve a image , only cost a few seconds

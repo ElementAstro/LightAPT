@@ -137,7 +137,7 @@ class AscomCameraAPI(BasicCameraAPI):
         res = self.get_configration()
         if res.get('status') != 0:
             return return_error(_(f"Failed tp load camera configuration"),{})
-        return return_success(_("Connect to camera successfully"),{"info":res.get("info")})
+        return return_success(_("Connect to camera successfully"),{"info":self.info.get_dict()})
 
     def disconnect(self) -> dict:
         """
@@ -212,7 +212,7 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_warning(_(error.NotConnected.value),{})
         try:
             self.info._name = self.device.Name
-            logger.debug(_("Camera name : {e}").format(self.info._nam))
+            logger.debug(_("Camera name : {}").format(self.info._name))
             self.info._id = self.device._client_id
             logger.debug(_("Camera ID : {}").format(self.info._id))
             self.info._description = self.device.Description
@@ -481,6 +481,7 @@ class AscomCameraAPI(BasicCameraAPI):
 
         try:
             status = CameraState.get(self.device.CameraState)
+            self.info._is_exposure = status == CameraStates.cameraExposing
         except NotConnectedException as e:
             return return_error(_(error.NotConnected.value),{"error":e})
         except DriverException as e:
@@ -488,7 +489,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(_("Get camera exposure status successfully"),{"status":status == CameraStates.cameraExposing})
+        return return_success(_("Get camera exposure status successfully"),{"status":self.info._is_exposure})
 
     def get_exposure_result(self) -> dict:
         """
@@ -508,6 +509,10 @@ class AscomCameraAPI(BasicCameraAPI):
             base64_encode_img = None
             info = None
 
+            used_time = 0
+            while not self.device.ImageReady and used_time <= self.info._timeout:
+                sleep(0.5)
+                used_time += 0.5
             imgdata = self.device.ImageArray
             if self.info._depth is None:
                 img_format = self.device.ImageArrayInfo
@@ -551,10 +556,11 @@ class AscomCameraAPI(BasicCameraAPI):
             if self.info._can_save:
                 logger.debug(_("Start saving image data in fits"))
                 hdr = fits.Header()
-                hdr['COMMENT'] = """FITS (Flexible Image Transport System) format defined in Astronomy and'
-                                    Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365.
-                                    Contact the NASA Science Office of Standards and Technology for the
-                                    FITS Definition document""" #100 and other FITS information.'
+                hdr['COMMENT'] = 'FITS (Flexible Image Transport System) format defined in Astronomy and'
+                hdr['COMMENT'] = 'Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365.'
+                hdr['COMMENT'] = 'Contact the NASA Science Office of Standards and Technology for the'
+                hdr['COMMENT'] = 'FITS Definition document #100 and other FITS information.'
+
                 if self.info._depth == 16:
                     hdr['BZERO'] = 32768.0
                     hdr['BSCALE'] = 1.0
@@ -580,7 +586,6 @@ class AscomCameraAPI(BasicCameraAPI):
                     hdu.writeto(_path, overwrite=True)
                 except OSError as e:
                     logger.error(_(f"Error writing image , error : {e}"))
-                logger.debug(_("Save image successfully"))
         except InvalidOperationException as e:
             return return_error(_("No image data available"),{"error":e})
         except NotConnectedException as e:
@@ -590,7 +595,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
         
-        return return_success(_("Save image successfully"),{"image" : base64_encode_img,"histogram" : hist,"info" : info})
+        return return_success(_("Save image successfully"),{"image" : nda.tolist(),"histogram" : hist.tolist(),"info" : info})
         
     def cooling(self, params: dict) -> dict:
         """

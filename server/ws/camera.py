@@ -19,9 +19,12 @@ Boston, MA 02110-1301, USA.
 """
 
 import asyncio
+import functools
+import json
 import threading
 from time import sleep
 import tornado
+import tornado.ioloop
 
 from utils.i18n import _
 from ..logging import logger , return_error,return_success,return_warning
@@ -41,15 +44,6 @@ class WSCamera(object):
         self.ws = ws
         self.blob = asyncio.Event()
         self.thread = None
-
-    def __del__(self) -> None:
-        """
-            Deinitialize the WSCamera class method
-            Args : None
-            Returns : None
-        """
-        if self.device.info._is_connected:
-            self.device.disconnect()
 
     def __str__(self) -> str:
         """
@@ -72,7 +66,7 @@ class WSCamera(object):
         """
         if self.device is not None:
             logger.info(_("Disconnecting from existing camera ..."))
-            self.disconnect()
+            await self.disconnect()
 
         _type = params.get('type')
         _device_name = params.get('device_name')
@@ -88,8 +82,9 @@ class WSCamera(object):
             self.device = AscomCameraAPI()
         else:
             return return_error(_("Unknown device type"))
-
-        return self.device.connect(params=params)
+        res = self.device.connect(params=params)
+        print(res)
+        return res
 
     async def disconnect(self,params = {}) -> dict:
         """
@@ -97,7 +92,7 @@ class WSCamera(object):
             Args : None
             Returns : dict
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Camera is not connected , please do not execute disconnect command"))
         
         return self.device.disconnect()
@@ -109,7 +104,7 @@ class WSCamera(object):
             Returns : dict
             NOTE : This function is just allowed to be called when the camera had already connected
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Camera is not connected , please do not execute reconnect command"))
 
         return self.device.reconnect()
@@ -131,7 +126,7 @@ class WSCamera(object):
             Args : None
             Returns : dict
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Camera is not connected , please do not execute polling command"))
 
         return self.device.polling()
@@ -144,7 +139,7 @@ class WSCamera(object):
                     exposure : float
             Returns : dict
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Camera int not connected , please do not execute start exposure command"))
 
         exposure = params.get('exposure')
@@ -154,18 +149,13 @@ class WSCamera(object):
         
         self.blob.clear()
         
-        res = self.device.start_exposure(exposure)
+        res = self.device.start_exposure(params)
         if res.get('status') != 0:
             return res
 
-        self.thread = threading.Thread(target=asyncio.run,args=(self.exposure_thread))
-        try:
-            self.thread.daemon = True
-        except:
-            self.thread.setDaemon(True)
-        self.thread.start()
+        tornado.ioloop.IOLoop.instance().add_callback(self.exposure_thread)
 
-        tornado.ioloop.IOLoop.instance().add_callback(self.wait_exposure_result,exposure)
+        return return_success(_("Exposure started successfully"),{})
 
     async def abort_exposure(self,params = {}) -> dict:
         """
@@ -173,11 +163,8 @@ class WSCamera(object):
             Args : None
             Returns : None
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Camera is not connected , please do not execute abort exposure command"))
-
-        if not self.device.info._is_exposure:
-            return return_error(_("Exposure is not started, please do not execute abort exposure command"))
 
         return self.device.abort_exposure()
 
@@ -188,9 +175,14 @@ class WSCamera(object):
             Returns : None
         """
         used_time = 0
-        while await self.get_exposure_status().get("params").get('status') and used_time <= self.device.info._timeout:
+        while used_time <= self.device.info._timeout:
+            res = await self.get_exposure_status()
+            
+            if not res.get("params").get('status'):
+                break
             await asyncio.sleep(0.5)
             used_time += 0.5
+        await self.get_exposure_result()
 
     async def get_exposure_status(self,params = {}) -> dict:
         """
@@ -198,56 +190,143 @@ class WSCamera(object):
             Args : None
             Returns : None
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return (_("Camera is not connected , please do not execute get exposure status command"))
 
         if not self.device.info._is_exposure:
             return (_("Exposure is not started, please do not execute get exposure status command"))
 
         res = self.device.get_exposure_status()
-        if res.get('status') != 0:
-            self.blob.clear()
+
+        await self.ws.write_message(res)
         
+        if res.get('status') != 0:
+                self.blob.clear()
+            
         if res.get('params').get('status') is True:
             self.blob.set()
         else:
             self.blob.clear()
-        
+
         return res
 
-    async def get_exposure_result(self) -> None:
+    async def get_exposure_result(self) -> dict:
         """
             Get the result of the exposure operation
             Args : None
             Returns : None
+            NOTE : I'm not sure that whether this function should be called directly by client
         """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get exposure result command"))
+        
+        res = self.device.get_exposure_result()
+        res["type"] = "data"
+        await self.ws.write_message(json.dumps(res))
+        return res
 
-    async def wait_exposure_result(self) -> dict:
+    async def cooling(self , params = {}) -> dict:
         """
-            Wait for exposure result and return it as a dict with image
+            Async start or stop cooling mode
+            Args :
+                params : dict
+                    enable : bool
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute cooling command"))
+        
+        return self.device.cooling(params=params)
+
+    async def cooling_to(self, params = {}) -> dict:
+        """
+            Async make the camera cool to specified temperature
+            Args :
+                params : dict
+                    temperature : float
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute cooling to command"))
+
+        return self.device.cooling_to(params=params)
+
+    async def get_current_temperature(self , params = {}) -> dict:
+        """
+            Async get the current temperature of the camera
+            Args : None
+            Return : dict
+                temperature : float
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get current temperature command"))
+
+        return self.device.get_current_temperature(params=params)
+
+    async def get_cooling_power(self , params = {}) -> dict:
+        """
+            Async get the cooling power of the camera
+            Args : None
+            Return : dict
+                power : float
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get current cool power command"))
+
+        return self.device.get_cooling_power(params=params)
+
+    async def get_cooling_status(self , params = {}) -> dict:
+        """
+            Async get the cooling status of the camera
             Args : None
             Returns : dict
+                status : bool
         """
-        r = {
-            "status" : 0,
-            "message" : "",
-            "params" : {}
-        }
-        try:
-            await asyncio.wait_for(self.blob, timeout=self.device.info._timeout)
-            logger.info(_("Camera exposure finished"))
-            r["message"] = _("Exposure finished successfully")
-        except TimeoutError:
-            logger.info(_("Camera exposure timed out"))
-            r["status"] = 1
-            r["message"] = _("Camera exposure timed out")
-        finally:
-            self.device.info._is_exposure = False
-            self.blob.clear()
-        
-        
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get cooling status command"))
 
-        
-        
+        return self.device.get_cooling_status(params=params)
 
-        
+    async def start_fan(self, params = {}) -> dict:
+        """
+            Async start fan of the camera (only for INDI and ToupCam)
+            Args : None
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute start fan command"))
+
+        return self.device.start_fan(params=params)
+
+    async def stop_fan(self, params = {}) -> dict:
+        """
+            Async stop fan of the camera (only for INDI and ToupCam)
+            Args : None
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute stop fan command"))
+
+        return self.device.stop_fan(params=params)
+
+    async def start_heat(self, params = {}) -> dict:
+        """
+            Async start heating camera (only for INDI and ToupCam)
+            Args : None
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute start heating command"))
+
+        return self.device.start_heat(params=params)
+
+    async def stop_heat(self, params = {}) -> dict:
+        """
+            Async stop heating of the camera (only for INDI and ToupCam)
+            Args : None
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute stop heat command"))
+
+        return self.device.stop_heat(params=params)

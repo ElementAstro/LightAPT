@@ -90,7 +90,7 @@ class WSFilterwheel(object):
             Args : None
             Returns : dict
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
         
         return self.device.disconnect()
@@ -103,7 +103,7 @@ class WSFilterwheel(object):
                 info : dict # just like connect()
             NOTE : This function is just allowed to be called when the filterwheel had already connected
         """
-        if self.device is None or not self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.reconnect()
@@ -115,7 +115,7 @@ class WSFilterwheel(object):
             Returns : dict
                 list : list # a list of filterwheels available
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is not None:
             return return_error(_("Filterwheel has already been connected"))
 
         return self.device.scanning()
@@ -127,7 +127,7 @@ class WSFilterwheel(object):
             Returns : dict
                 info : dict # usually generated from get_dict() function
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.polling()
@@ -149,7 +149,7 @@ class WSFilterwheel(object):
             Returns : dict
                 filter_id : int # id of the current filter
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.get_current_filter()
@@ -165,7 +165,7 @@ class WSFilterwheel(object):
                 id : int # id of the target filter
             Returns : dict
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.slew_to(params)
@@ -182,7 +182,7 @@ class WSFilterwheel(object):
                 offset : a list of the filters offsets
                 name : a list of the names of the filters
         """
-        if self.device is not None or self.device.info._is_connected:
+        if self.device is None:
             return return_error(_("Filterwheel is not connected"))
 
         return self.device.get_filter_list()

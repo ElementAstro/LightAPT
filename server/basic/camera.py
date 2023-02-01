@@ -123,7 +123,6 @@ class BasicCameraInfo(object):
                 "can_cooling" : self._can_cooling,
                 "can_gain" : self._can_gain,
                 "can_get_coolpower" : self._can_get_coolpower,
-                "can_guiding" : self._can_guiding,
                 "can_has_shutter" : self._can_has_shutter,
                 "can_iso" : self._can_iso,
                 "can_offset" : self._can_offset,
@@ -132,9 +131,7 @@ class BasicCameraInfo(object):
                 "is_connected" : self._is_connected,
                 "is_cooling" : self._is_cooling,
                 "is_exposure" : self._is_exposure,
-                "is_guiding" : self._is_guiding,
-                "is_imageready" : self._is_imageready,
-                "is_video" : self._is_video,
+                "is_imageready" : self._is_imageready
             },
             "properties" : {
                 "max_gain" : self._max_gain,
