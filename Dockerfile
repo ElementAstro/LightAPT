@@ -18,9 +18,9 @@ RUN mkdir /app ; \
     touch /app/Entrypoint.sh ; \
     echo "#!/bin/bash" >> /app/Entrypoint.sh ; \
     echo "cd /app/lightapt" >> /app/Entrypoint.sh ; \
-    echo "python lightserver.py" >> /app/Entrypoint.sh ; \
+    echo "python lightserver.py" >> /app/Entrypoint.sh
 
-WORKDIR /app
+WORKDIR /app/lightapt
 
 EXPOSE 8000
 
