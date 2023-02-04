@@ -487,4 +487,3 @@ from utils.utility import switch
 
 indi_server = INDIManager()
 indi_collection = INDIDriverCollection(c.config.get('indiweb',{}).get('data',"/usr/share/indi"))
-

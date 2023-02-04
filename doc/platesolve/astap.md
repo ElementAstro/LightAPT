@@ -3,8 +3,10 @@ ASTAP Command Line Interface
 
 # Description
 
-As another very famous solver , ASTAP provides some command line interface for other software to implement . The following command line options are available.
-`
+ASTAP is a free stacking and astrometric solver (plate solver) program for deep sky images. In works with astronomical images in the FITS format, but can import RAW DSLR images or XISF, PGM, PPM, TIF, PNG and JPG  images. It has a powerful FITS viewer and the native astrometric solver can be used  by CCDCiel, NINA, APT or SGP imaging programs to synchronise the mount based on an image taken.
+
+## API
+```
 -f  filename  {fits, tiff, png, jpg files}
 -f  stdin     {read raw image from stdin}
 -r  radius_area_to_search[degrees]
@@ -24,8 +26,9 @@ As another very famous solver , ASTAP provides some command line interface for o
 -progress   {Log all progress steps and messages}
 -update  {update the FITS header with the found solution. Jpg, png, tiff will be written as fits}
 -wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}
-`
+```
 
-Example:
-    Depends on astap command line tool
-    astap_cli -f apod2.jpg --ra 05:38:18 -z 0  -speed -spd -02:45:19 -wcs
+Example:Depends on astap command line tool
+```
+astap_cli -f apod2.jpg --ra 05:38:18 -z 0  -speed -spd -02:45:19 -wcs
+```

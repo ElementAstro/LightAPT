@@ -443,3 +443,259 @@ class AscomFocuserAPI(BasicFocuserAPI):
             return return_error(_("Network error"),{"error":e})
 
         return return_success(_("Get the focuser current position successfully"),{"position":position})
+    
+import asyncio
+import tornado.ioloop
+import tornado.websocket
+
+class WSAscomFocuser(object):
+    """
+        Websocket focuser interface
+    """
+
+    def __init__(self) -> None:
+        """
+            Initial a new WSFocuser
+            Args : None
+            Returns : None
+        """
+        self.device = AscomFocuserAPI()
+        self.ws = None
+        self.thread = None
+
+    def __del__(self) -> None:
+        """
+            Delete a WSFocuser
+            Args : None
+            Returns : None
+        """
+
+    def __str__(self) -> str:
+        """
+            Returns the name of the WSFocuser class
+            Args : None
+            Returns : None
+        """
+        return "LightAPT Ascom Focuser Websocket Wrapper Class"
+
+    async def connect(self , params = {}) -> None:
+        """
+            Async connect to the focuser 
+            Args : 
+                params : dict
+                    device_name : str
+                    host : str # both indi and ascom default is "127.0.0.1"
+                    port : int # for indi port is 7624 , for ascom port is 11111
+            Returns : dict
+                info : dict # BasicaFocuserInfo object
+        """
+        if self.device is not None:
+            logger.info(_("Disconnecting from existing focuser ..."))
+            self.disconnect()
+
+        _device_name = params.get('device_name')
+        if  _device_name is None:
+            return return_error(_("Type or device name must be specified"))
+        
+        return self.device.connect(params=params)
+
+    async def disconnect(self,params = {}) -> dict:
+        """
+            Async disconnect from the device
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+        
+        return self.device.disconnect()
+
+    async def reconnect(self,params = {}) -> dict:
+        """
+            Async reconnect to the device
+            Args : None
+            Returns : dict
+                info : dict # just like connect()
+            NOTE : This function is just allowed to be called when the focuser had already connected
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.reconnect()
+
+    async def scanning(self,params = {}) -> dict:
+        """
+            Async scanning all of the devices available
+            Args : None
+            Returns : dict
+                list : list # a list of focusers available
+        """
+        if self.device is None:
+            return return_error(_("Focuser has already been connected"))
+
+        return self.device.scanning()
+
+    async def polling(self,params = {}) -> dict:
+        """
+            Async polling method to get the newest focuser information
+            Args : None
+            Returns : dict
+                info : dict # usually generated from get_dict() function
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.polling()
+
+    async def get_parameter(self, params = {}) -> dict:
+        """
+            Get the specified parameter and return the value
+            Args : 
+                params : dict
+                    name : str # name of the parameter
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.get_parameter(params=params)
+
+    async def set_parameter(self, params = {}) -> dict:
+        """
+            Set the specified parameter of the camera
+            Args :
+                params : dict
+                    name : str
+                    value : str
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.set_parameter(params=params)
+
+    # #############################################################
+    #
+    # Following methods are used to control the focuser
+    #
+    # #############################################################
+
+    # #############################################################
+    # Current position
+    # #############################################################
+
+    async def get_current_position(self,params = {}) -> dict:
+        """
+            Get the current position of the focuser
+            Args : None
+            Returns : dict
+                position : int
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.get_current_position()
+
+    # #############################################################
+    # Move
+    # #############################################################
+
+    async def move_step(self,params = {}) -> dict:
+        """
+            Move in or out in a distance of the specified step
+            Args : 
+                params : dict
+                    step : int
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+        
+        step = params.get('step')
+        if step is None or not isinstance(step, int) or not 0 <= step <= self.device.info._max_steps:
+            return return_error(_("Invalid step value was provided"),{})
+
+        res = self.device.move_step(params)
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.move_thread)
+
+        return res
+
+    async def move_to(self,params = {}) -> dict:
+        """
+            Move to a specific position
+            Args :
+                params : dict
+                    position : int
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        position = params.get('position')
+        if position is None or not isinstance(position,int) or not 0 <= position <= self.device.info._max_steps:
+            return return_error(_("Invalid target position was provided"),{})
+
+        res = self.device.move_to(params)
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.move_thread)
+
+        return res
+
+    async def move_thread(self) -> None:
+        """
+            Movement monitoring thread
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_movement_status()
+            
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
+
+    async def get_movement_status(self,params = {}) -> dict:
+        """
+            Get the status of movement
+            Args : None
+            Returns : dict
+                status : bool # True if the focuser is moving
+                position : int # current position
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        res = self.device.get_movement_status()
+
+        await self.ws.write_message(res)
+
+        return res
+
+    # #############################################################
+    # Temperature
+    # #############################################################
+
+    async def get_temperature(self , params = {}) -> dict:
+        """
+            Async get the current temperature of the focuser
+            Args : None
+            Returns : dict
+                temperature : float
+            NOTE : This function need focuser supported
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.get_temperature()
+
+    async def get_current_position(self) -> dict:
+        """
+            Async get the current position of the focuser
+            Args : None
+            Return : dict
+                position : int
+        """
+        if self.device is None:
+            return return_error(_("Focuser is not connected"))
+
+        return self.device.get_current_position()

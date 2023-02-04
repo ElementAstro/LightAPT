@@ -25,7 +25,7 @@ import socket
 from time import sleep
 
 from requests import exceptions
-from libs.alpyca.telescope import Telescope,EquatorialCoordinateType, TelescopeAxes
+from libs.alpyca.telescope import Telescope,EquatorialCoordinateType, TelescopeAxes,DriveRates
 from libs.alpyca.exceptions import (DriverException,
                                         ParkedException,
                                         SlavedException,
@@ -659,6 +659,106 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
         self.info.ra = ra
         self.info.dec = dec
         return return_success(_("Get goto result successfully"),{"ra":self.info.ra, "dec":self.info.dec})
+    
+    def tracking(self , params = {}) -> dict:
+        """
+            Start or stop tracking mode of the telescope
+            Args:
+                params : dict
+                    enable : bool
+            Returns: dict
+        """
+        if not self.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+        if self.info._is_parked:
+            return return_success(_("Telescope has already parked"),{})
+        if not self.info._can_ra_track and not self.info._can_dec_track:
+            return return_error(_("Telescope is not supported to track"))
+        
+        enable = params.get('enable')
+        if enable is None or not isinstance(enable,bool):
+            return return_error(_("Invalid enable value was provided"))
+        
+        try:
+            self.device.Tracking = enable
+        except NotImplementedException as e:
+            return return_error(_("Telescope does not support track function"),{"error":e})
+        except NotConnectedException as e:
+            self.info._is_connected = False
+            return return_error(_("Telescope is not connected"),{"error": e})
+        except DriverException as e:
+            return return_error(_("Telescope driver error"),{"error": e})
+        except exceptions.ConnectionError as e:
+            return return_error(_("Network error"),{"error": e})
+        
+        return return_success(_("Set the tracking mode of the telescope successfully"))
+    
+    def get_tracking_mode(self) -> dict:
+        """
+            Get the tracking mode of the current telescope
+            Args : None
+            Returns : dict
+                mode : str        
+        """
+        if not self.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+        if not self.info._can_ra_track and not self.info._can_dec_track:
+            return return_error(_("Telescope is not supported to track"))
+        
+        try:
+            self.info.track_mode = self.device.TrackingRate
+        except NotImplementedException as e:
+            return return_error(_("Telescope does not support tracking function"),{"error":e})
+        except NotConnectedException as e:
+            self.info._is_connected = False
+            return return_error(_("Telescope is not connected"),{"error": e})
+        except DriverException as e:
+            return return_error(_("Telescope driver error"),{"error": e})
+        except exceptions.ConnectionError as e:
+            return return_error(_("Network error"),{"error": e})
+        
+        mode = ""
+        if self.info.track_mode == DriveRates.driveSolar:
+            mode = "Solar"
+        elif self.info.track_mode == DriveRates.driveLunar:
+            mode = "Lunar"
+        elif self.info.track_mode == DriveRates.driveKing:
+            mode = "King"
+        elif self.info.track_mode == DriveRates.driveSidereal:
+            mode = "Star"
+        
+        return return_success(_("Get the tracking mpde successfully"),{"mode":mode})
+    
+    def set_tracking_rate(self , params = {}) -> dict:
+        """
+            Set the tracking rate of the current telescope
+            Args :
+                params : dict
+                    rate : int
+            Returns : dict
+        """
+        if not self.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+        if not self.info._can_ra_track and not self.info._can_dec_track:
+            return return_error(_("Telescope is not supported to track"))
+        
+        _rate = params.get("rate")
+        if not _rate or not isinstance(_rate,int):
+            return return_error(_("Invalid rate value was specified"))
+        
+        try:
+            self.device.TrackingRate = _rate
+        except InvalidValueException as e:
+            return return_error(_("Invalid telescope tracking rate was specified"),{"error":e})
+        except NotImplementedException as e:
+            return return_error(_("Telescope does not support tracking function"),{"error":e})
+        except NotConnectedException as e:
+            self.info._is_connected = False
+            return return_error(_("Telescope is not connected"),{"error": e})
+        except DriverException as e:
+            return return_error(_("Telescope driver error"),{"error": e})
+        except exceptions.ConnectionError as e:
+            return return_error(_("Network error"),{"error": e})
 
     def park(self) -> dict:
         """
@@ -680,7 +780,7 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
         try:
             self.device.Park()
         except NotImplementedException as e:
-            return return_error(_("Telescope does not support park function"),{})
+            return return_error(_("Telescope does not support park function"),{"error":e})
         except NotConnectedException as e:
             self.info._is_connected = False
             return return_error(_("Telescope is not connected"),{"error": e})
@@ -839,6 +939,7 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
             self.info._can_home = False
             return return_error(_("Telescope is not support home function"),{"error": e})
         except NotConnectedException as e:
+            self.info._is_connected = False
             return return_error(_("Telescope is not connected : {}").format(e))
         except DriverException as e:
             return return_error(_("Telescope driver error"),{"error":e})
@@ -868,6 +969,7 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
                 self.info.dec = self.device.Declination
             logger.debug(_("In returning home processing , RA : {} , DEC : {}").format(self.info.ra,self.info.dec))
         except NotConnectedException as e:
+            self.info._is_connected = False
             return return_error(_("Telescope is not connected : {}").format(e))
         except DriverException as e:
             return return_error(_("Telescope driver error"),{"error":e})
@@ -875,3 +977,457 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
             return return_error(_("Network error"),{"error":e})
         
         return return_success(_("Get the home status of the telescope successfully"),{"status":status,"ra":self.info.ra,"dec":self.info.dec})
+    
+    def get_gps_location(self) -> dict:
+        """
+            Get the GPS location of the telescope
+            Args : None
+            Returns : None
+        """
+        if not self.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+        if not self.info._can_get_location:
+            return return_error(_("Telescope is not supported to get location"))
+        
+        try:
+            self.info.lon = self.device.SiteLongitude
+            self.info.lat = self.device.SiteLatitude
+            self.info.elevation = self.device.SiteElevation
+        except NotImplementedException as e:
+            return return_error(_("No location value available"),{'error':e})
+        except InvalidOperationException as e:
+            self.info._can_get_location = False
+            return return_error(_("Telescope is not supported getting location function"),{"error": e})
+        except NotConnectedException as e:
+            self.info._is_connected = False
+            return return_error(_("Telescope is not connected : {}").format(e))
+        except DriverException as e:
+            return return_error(_("Telescope driver error"),{"error":e})
+        except exceptions.ConnectionError as e:
+            return return_error(_("Network error"),{"error":e})
+        
+        return return_success(_("Get telescope location information successfully"),{"lon":self.info.lon, "lat":self.info.lat,"elevation":self.info.elevation})
+    
+        
+import asyncio
+import tornado.ioloop
+import tornado.websocket
+
+class WSAscomTelescope(object):
+    """
+        Websocket telescope interface
+    """
+
+    def __init__(self) -> None:
+        """
+            Initial a new WSTelescope
+            Args : None
+            Returns : None
+        """
+        self.thread = None
+        self.device = AscomTelescopeAPI()
+
+    def __del__(self) -> None:
+        """
+            Delete a WSTelescope
+            Args : None
+            Returns : None
+        """
+
+    def __str__(self) -> str:
+        """
+            Returns the name of the WSTelescope class
+            Args : None
+            Returns : None
+        """
+        return "LightAPT Ascom Websocket Telescope Wrapper API "
+    
+    async def connect(self , params = {} , ws = None) -> dict:
+        """
+            Async connect to the telescope 
+            Args : 
+                params : dict
+                    device_name : str
+                    host : str # both indi and ascom default is "127.0.0.1"
+                    port : int # for indi port is 7624 , for ascom port is 11111
+            Returns : dict
+                info : dict # BasicaTelescopeInfo object
+        """
+        if self.device is not None:
+            logger.info(_("Disconnecting from existing telescope ..."))
+            self.disconnect()
+
+        _device_name = params.get('device_name')
+
+        if _device_name is None:
+            return return_error(_("Type or device name must be specified"))
+        
+        return self.device.connect(params=params)
+
+    async def disconnect(self,params = {} , ws = None) -> dict:
+        """
+            Async disconnect from the device
+            Args : None
+            Returns : dict
+        """
+        if self.device is None or not self.device.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+        
+        return self.device.disconnect()
+
+    async def reconnect(self,params = {} , ws = None) -> dict:
+        """
+            Async reconnect to the device
+            Args : None
+            Returns : dict
+                info : dict # just like connect()
+            NOTE : This function is just allowed to be called when the telescope had already connected
+        """
+        if self.device is None or not self.device.info._is_connected:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.reconnect()
+
+    async def scanning(self,params = {} , ws = None) -> dict:
+        """
+            Async scanning all of the devices available
+            Args : None
+            Returns : dict
+                list : list # a list of telescopes available
+        """
+        if self.device is not None:
+            return return_error(_("Telescope has already been connected"))
+
+        return self.device.scanning()
+
+    async def polling(self,params = {} , ws = None) -> dict:
+        """
+            Async polling method to get the newest telescope information
+            Args : None
+            Returns : dict
+                info : dict # usually generated from get_dict() function
+        """
+        if self.device is not None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.polling()
+    
+    async def get_parameter(self , params = {} , ws = None) -> dict:
+        """
+            Get the specified parameter value of the telescope\n
+            Args :
+                params : dict
+                    name : str
+            Returns : dict
+        """
+        _name = params.get('name')
+        if not _name or not isinstance(_name,str):
+            return return_error(_("Invalid parameter name was specified"))
+
+        return self.device.get_parameter(params=params)
+
+    async def set_parameter(self, params = {} , ws = None) -> dict:
+        """
+            Set the specified parameter value of the telescope\n
+            Args :
+                params : dict
+                    name : str
+                    value : str
+            Returns : dict
+        """
+        _name = params.get('name')
+        _value = params.get('value')
+        if not _name or not _value or not isinstance(_name,str):
+            return return_error(_("Invalid name or value were specified"))
+        return self.device.set_parameter(params=params)
+
+    # #############################################################
+    #
+    # Following methods are used to control the telescope
+    #
+    # #############################################################
+
+    # #############################################################
+    # Goto
+    # #############################################################
+
+    async def goto(self,params = {} , ws = None) -> dict:
+        """
+            Async goto operation to let the telescope target at a specific point\n
+            Args :
+                params : dict
+                    ra : str or float
+                    dec : str or float
+                    j2000 : bool
+                ws : tornado.websocket.WebSocketHandler instance
+            Returns : dict
+            NOTE : This function is non-blocking , it will return the results immediately 
+                    and start a thread to watch the operation process.If the goto is finished,
+                    it will return a message to connected clients
+            NOTE : The parameters contain the coordinates of the target , please just use a single
+                    axis format like RA/DEC or AZ/ALT , j2000 means if the coordinates are in the
+                    format of J2000 , if true , they need to be converted before send to telescope
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        _ra = params.get('ra')
+        _dec = params.get('dec')
+        _j2000 = params.get('j2000',False)
+
+        if _ra is None or not isinstance(_ra,(str,float)) or _dec is None or not isinstance(_dec,(str,float)):
+            return return_error(_("Invalid coordinates value of the target object"))
+
+        if _j2000:
+            pass # There need a convert function
+
+        res = self.device.goto(params=params)
+        if res.get("status") != 0:
+            return res
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.goto_thread,ws)
+
+        return return_success(_("Telescope started goto operation successfully"))
+
+    async def goto_thread(self , ws = None) -> None:
+        """
+            Goto status monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info.timeout:
+            res = await self.get_goto_status()
+            print(res)
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+        await ws.write_message(await self.get_goto_result()) 
+
+    async def abort_goto(self,params = {} , ws = None) -> dict:
+        """
+            Async abort goto operation
+            Args : None
+            Returns : dict
+            NOTE : This function must be called before shutting down the main server
+        """
+
+    async def get_goto_status(self,params = {} , ws = None) -> dict:
+        """
+            Async get the status of the goto operation
+            Args : 
+                params : None
+                ws : tornado.websocket.WebSocketHandler
+            Returns : dict
+                status : bool # True if the telescope is still slewing
+                ra : float # current ra
+                dec : float # current dec
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.get_goto_status()
+
+        await ws.write_message(res)
+
+        return res
+
+    async def get_goto_result(self,params = {} , ws = None) -> dict:
+        """
+            Async get the result of the goto operation
+            Args : None
+            Returns : dict
+                ra : str # current ra
+                dec : str # current dec
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.get_goto_result()
+    
+    # #############################################################
+    # Park
+    # #############################################################
+
+    async def park(self,params = {} , ws = None) -> dict:
+        """
+            Async park the telescope and after this operation , we cannot control the telescope
+            until we unpark the telescope.
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.park()
+
+    async def unpark(self,params = {} , ws = None) -> dict:
+        """
+            Async unpark the parked telescope
+            Args : None
+            Returns : dict
+            NOTE : If a telescope is not parked , please do not execute this function
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.unpark()
+
+    async def get_park_position(self,params = {} , ws = None) -> dict:
+        """
+            Async get the position of the park operation
+            Args : None
+            Returns : dict
+                ra : str # ra of the parking position
+                dec : str # dec of the parking position
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        return self.device.get_park_position()
+
+    async def set_park_position(self,params = {} , ws = None) -> dict:
+        """
+            Async set the position of the park operation
+            Args : None
+                ra : str or float # ra of the parking position
+                dec : str or float # dec of the parking position
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        _ra = params.get('ra')
+        _dec = params.get('dec')
+        if _ra is None or not isinstance(_ra, (str, float)) or _dec is None or not isinstance(_dec, (str, float)):
+            return return_error(_("Invalid parking position values"))
+
+        return self.device.set_park_position(params=params)
+
+    # #############################################################
+    # Home
+    # #############################################################
+
+    async def home(self,params = {} , ws = None) -> dict:
+        """
+            Async Let the telescope slew to home position
+            Args :
+                params : None
+                ws : tornado.websocket.WebSocketHandler
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.home()
+        if res.get("status") != 0:
+            return res
+        
+        tornado.ioloop.IOLoop.instance().add_callback(self.home_thread,ws)
+
+        return return_success(_("Telescope started to move to home successfully"))
+
+    async def home_thread(self , ws = None) -> None:
+        """
+            Home operation monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info.timeout:
+            res = await self.get_home_status()
+            print(res)
+            if res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
+    async def get_home_status(self,params = {}) -> dict:
+        """
+            Async get the status of the home 
+            Args : None
+            Returns : dict
+                status : bool # wheather the telescpe is at home position
+        """
+        if self.device is None:
+            return return_error(_("Telescope is not connected"))
+
+        res = self.device.get_home_status()
+
+        await self.ws.write_message(res)
+
+        return res
+
+    async def get_home_position(self,params = {} , ws = None) -> dict:
+        """
+            Async get the home position
+            Args : None
+            Returns : dict
+                ra : str # ra of the home position
+                dec : str # dec of the home position
+        """
+        return return_error(_("Get home position is not supported"))
+
+    # #############################################################
+    # Track
+    # #############################################################
+
+    async def track(self,params = {} , ws = None) -> dict:
+        """
+            Async start tracking mode without any parameters
+            Args :
+                params : dict
+                ws : None
+            Returns : dict
+        """
+
+        return self.device.tracking(params=params)
+
+    async def abort_track(self,params = {} , ws = None) -> dict:
+        """
+            Async abort the tracking
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            logger.error(_("Telescope is not connected"))
+        return self.device.tracking(params=params)
+
+    async def get_track_mode(self,params = {} , ws = None) -> dict:
+        """
+            Async get the track mode of the current telescope
+            Args : None
+            Returns : dict
+                mode : str
+        """
+        if self.device is None:
+            logger.error(_("Telescope is not available"))
+        
+        return self.device.get_tracking_mode()
+
+    async def set_track_rate(self,params = {} , ws = None) -> dict:
+        """
+            Async set the track rate of the current telescope
+            Args : dict
+                ra_rate : float
+                dec_rate : float
+        """
+        if self.device is None:
+            logger.error(_("Telescope is not connected"))
+
+        return self.device.set_tracking_rate(params=params)
+
+    # #############################################################
+    # GPS Location
+    # #############################################################
+
+    async def get_gps_location(self,params = {} , ws = None) -> dict:
+        """
+            Async get GPS location
+            Args : None
+            Returns : dict
+                lon : str
+                lat : str
+                elevation : float
+        """
+        if not self.device:
+            return return_error(_("Telescope is not connected"))
+        
+        return self.device.get_gps_location()

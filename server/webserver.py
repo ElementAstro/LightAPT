@@ -124,3 +124,11 @@ class SkymapHtml(BaseLoginHandler):
     @tornado.web.authenticated
     def get(self):
         self.render("skymap.html")
+
+class TestHtml(tornado.web.RequestHandler):
+    def get(self):
+        self.render("test.html")
+
+class DeviceHtml(tornado.web.RequestHandler):
+    def get(self):
+        self.render("device.html")

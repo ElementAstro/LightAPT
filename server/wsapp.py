@@ -31,12 +31,6 @@ import tornado.auth
 from utils.i18n import _
 from .logging import logger,return_error
 
-from .ws.camera import WSCamera
-from .ws.telescope import WSTelescope
-from .ws.focuser import WSFocuser
-from .ws.filterwheel import WSFilterwheel
-from .ws.solver import WSSolver
-
 class MainWebsocketServer(tornado.websocket.WebSocketHandler):
     """
         Main websocket server to process all of the commands
@@ -52,11 +46,11 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             Returns : None
         """
         super().__init__(application, request, **kwargs)
-        self.camera = WSCamera(self)
-        self.telescope = WSTelescope(self)
-        self.focuser = WSFocuser(self)
-        self.filterwheel = WSFilterwheel(self)
-        self.sovler = WSSolver(self)
+        self.camera = None
+        self.telescope = None
+        self.focuser = None
+        self.filterwheel = None
+        self.sovler = None
         self.guider = None
 
     def __del__(self) -> None:
@@ -165,7 +159,7 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             await self.write_message({"status": 1, "message": "Failed to execute command"})
         # Return the response to client
         await self.write_message(json.dumps(await self.generate_command(res)))
-        
+
     async def run_command(self, device : str, command : str , params : dict) -> dict:
         """
             Execute the command asynchronously and return the response\n
@@ -225,6 +219,7 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             return return_error(_("Error executing command"),{"error":e})
         return res
 
+        
     async def generate_command(self, params : dict) -> dict:
         """
             Generates driver responses to the format expected
@@ -238,6 +233,80 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             r = {"type" : "data"}
             r.update(params)
         return r
+    
+
+    def start_device(self, server_type : str , device_type : str , device_name : str , status : bool) -> bool:
+        """
+            Start or stop a device
+            Args:
+                server_type : str # indi or ascom
+                device_type : str
+                device_name : str
+                status : bool
+            Returns: bool
+        """
+        if device_type == "telescope":
+            if status:
+                if self.telescope is not None:
+                    logger.info("Disconnecting from the existing telescope")
+                    self.telescope.disconnect()
+                if server_type == "ascom":
+                    from server.api.ascom.telescope import WSAscomTelescope
+                    self.telescope = WSAscomTelescope(self)
+                elif server_type == "indi":
+                    from server.api.indi.telescope import IndiTelescopeDevice
+                    this_indi_device = None
+                    if self.indi_client is None:
+                        from server.api.indi.client import IndiClient
+                        self.indi_client,this_indi_device = IndiClient()
+                        self.indi_client,this_indi_device.connectServer
+                        this_indi_device = self.indi_client,this_indi_device.getDevice(device_name)
+                        if not this_indi_device:
+                            logger.error("Failed to get device")
+                            return False
+                        logger.info(f'connecting new device {device_type}, {device_name}')
+                    self.telescope = IndiTelescopeDevice(self.indi_client,this_indi_device)
+                else:
+                    logger.error(f"Unknown device type {device_type}")
+                    return False
+                self.telescope.connect()
+                return True
+            else:
+                if self.telescope:
+                    self.telescope.disconnect()
+                    self.telescope = None
+                return True
+        elif device_type == "camera":
+            if status:
+                if self.camera is not None:
+                    logger.info("Disconnecting from the existing camera")
+                    self.camera.disconnect()
+                if server_type == "ascom":
+                    from server.api.ascom.camera import WSAscomCamera
+                    self.camera = WSAscomCamera(self)
+                elif server_type == "indi":
+                    from server.api.indi.camera import INDICameraAPI
+                    this_indi_device = None
+                    if self.indi_client is None:
+                        from server.api.indi.client import IndiClient
+                        self.indi_client,this_indi_device = IndiClient()
+                        self.indi_client,this_indi_device.connectServer
+                        this_indi_device = self.indi_client,this_indi_device.getDevice(device_name)
+                        if not this_indi_device:
+                            logger.error("Failed to get device")
+                            return False
+                        logger.info(f'connecting new device {device_type}, {device_name}')
+                    self.camera = INDICameraAPI(self.indi_client,this_indi_device)
+                else:
+                    logger.error(f"Unknown device type {device_type}")
+                    return False
+                self.telescope.connect()
+                return True
+            else:
+                if self.telescope:
+                    self.telescope.disconnect()
+                    self.telescope = None
+                return True
 
 
 # #################################################################
@@ -307,7 +376,7 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,tornado.auth.GoogleOAu
                 extra_params={'approval_prompt': 'auto'})
 
 from .webserver import IndexHtml,ClientHtml,DesktopHtml,DebugHtml,WebSSHHtml
-from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml
+from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml,TestHtml,DeviceHtml
 from .webserver import DesktopBrowserHtml,DesktopStoreHtml,DesktopSystemHtml
 from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
                         INDIFIFODeviceStartStop,INDIFIFOGetAllDevice,
@@ -339,6 +408,8 @@ def make_server() -> tornado.web.Application:
             (r"/bugreport",BugReportHtml),
             (r"/novnc",NoVNCHtml),
             (r"/skymap",SkymapHtml),
+            (r"/test",TestHtml),
+            (r"/devices",DeviceHtml),
 
             (r"/indi/debug/",INDIDebugHtml),
             (r"/indi/ws/debugging/", INDIDebugWebSocket),

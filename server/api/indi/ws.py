@@ -1,7 +1,7 @@
 import traceback
 from .misc import *
 import sys
-from .indi_telescope import IndiTelescopeDevice
+from .telescope import IndiTelescopeDevice
 from .camera import INDICameraAPI
 from .focuser import INDIFocuserAPI
 from .filterwheel import IndiFilterWheelDevice

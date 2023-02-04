@@ -761,38 +761,6 @@ class AscomCameraAPI(BasicCameraAPI):
         
         return return_success(success.GetCoolingTemperatureSuccess.value,{'temperature':self.info._temperature})
 
-    def start_fan(self , params = {}) -> dict:
-        """
-            Start the fan of the camera (however fucking alpyca do not support this)
-            Args : None
-            Returns : dict
-        """
-        return return_error(error.NotSupported.value,{"error":error.NotSupported.value})
-
-    def stop_fan(self , params = {}) -> dict:
-        """
-            Stop the fan of the camera (however fucking alpyca do not support this)
-            Args : None
-            Returns : dict
-        """
-        return return_error(error.NotSupported.value,{"error":error.NotSupported.value})
-
-    def start_heat(self , params = {}) -> dict:
-        """
-            Start the heat of the camera (however fucking alpyca do not support this)
-            Args : None
-            Returns : dict
-        """
-        return return_error(error.NotSupported.value,{"error":error.NotSupported.value})
-
-    def stop_heat(self , params = {}) -> dict:
-        """
-            Stop the heat of the camera (however fucking alpyca do not support this)
-            Args : None
-            Returns : dict
-        """
-        return return_error(error.NotSupported.value,{"error":error.NotSupported.value})
-
     # #################################################################
     # Camera Settings
     # #################################################################
@@ -1055,3 +1023,458 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
+
+        return return_success(_("Set camera binning successfully"))
+
+import asyncio
+import tornado
+import tornado.ioloop
+import tornado.websocket
+
+class WSAscomCamera(object):
+    """
+        Websocket camera wrapper class for AscomCameraAPI class
+    """
+
+    def __init__(self) -> None:
+        """
+            Initial constructor for WSCamera class methods 
+            Args :
+                ws : a websocket instance
+            Returns : None
+        """
+        self.device = None
+        self.ws = None
+        self.blob = asyncio.Event()
+        self.thread = None
+        self.device = AscomCameraAPI()
+
+    def __str__(self) -> str:
+        """
+            Returns the name of the WSCamera class
+            Args : None
+            Returns : None
+        """
+        return "LightAPT Ascom Websocket Camera API class"
+
+    async def connect(self , params : dict , ws = None) -> dict:
+        """
+            Async connect to the camera \n
+            Args : 
+                params : dict
+                    type : str # ascom or indi
+                    device_name : str
+                    host : str # both indi and ascom default is "127.0.0.1"
+                    port : int # for indi port is 7624 , for ascom port is 11111
+            Returns : dict
+        """
+        if self.device is not None:
+            logger.info(_("Disconnecting from existing camera ..."))
+            await self.disconnect()
+
+        _device_name = params.get('device_name')
+
+        if _device_name is None:
+            return (_("Device name must be specified"))
+        
+        return self.device.connect(params=params)
+
+    async def disconnect(self,params = {} , ws = None) -> dict:
+        """
+            Async disconnect from the device\n
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute disconnect command"))
+        
+        return self.device.disconnect()
+
+    async def reconnect(self,params = {} , ws = None) -> dict:
+        """
+            Async reconnect to the device\n
+            Args : None
+            Returns : dict
+            NOTE : This function is just allowed to be called when the camera had already connected
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute reconnect command"))
+
+        return self.device.reconnect()
+
+    async def scanning(self,params = {} , ws = None) -> dict:
+        """
+            Async scanning all of the devices available\n
+            Args : None
+            Returns : dict
+        """
+        if self.device is not None or self.device.info._is_connected:
+            return return_error(_("Camera had already been connected , please do not execute scanning command"))
+
+        return self.device.scanning()
+
+    async def polling(self,params = {} , ws = None) -> dict:
+        """
+            Async polling method to get the newest camera information\n
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute polling command"))
+
+        return self.device.polling()
+
+    async def get_parameter(self , params = {} , ws = None) -> dict:
+        """
+            Get the specified parameter value of the camera\n
+            Args :
+                params : dict
+                    name : str
+            Returns : dict
+        """
+        _name = params.get('name')
+        if not _name or not isinstance(_name,str):
+            return return_error(_("Invalid parameter name was specified"))
+
+        return self.device.get_parameter(params=params)
+
+    async def set_parameter(self, params = {} , ws = None) -> dict:
+        """
+            Set the specified parameter value of the camera\n
+            Args :
+                params : dict
+                    name : str
+                    value : str
+            Returns : dict
+        """
+        _name = params.get('name')
+        _value = params.get('value')
+        if not _name or not _value or not isinstance(_name,str):
+            return return_error(_("Invalid name or value were specified"))
+        return self.device.set_parameter(params=params)
+
+    async def start_exposure(self, params = {} , ws = None) -> dict:
+        """
+            Async start exposure event
+            Args : 
+                params : dict
+                    exposure : float
+                ws : tornado.websocket.WebsocketHandler
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Camera int not connected , please do not execute start exposure command"))
+
+        exposure = params.get('exposure')
+
+        if exposure is None or not 0 <= exposure <= 3600:
+            return return_error(_("A reasonable exposure value is required"))
+        
+        self.blob.clear()
+        
+        res = self.device.start_exposure(params)
+        if res.get('status') != 0:
+            return res
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.exposure_thread)
+
+        return return_success(_("Exposure started successfully"),{})
+
+    async def abort_exposure(self,params = {} , ws = None) -> dict:
+        """
+            Async abort the exposure operation
+            Args : None
+            Returns : None
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute abort exposure command"))
+
+        return self.device.abort_exposure()
+
+    async def exposure_thread(self) -> None:
+        """
+            Guard thread during the exposure and read the the status of the camera each second
+            Args : None
+            Returns : None
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_exposure_status()
+            
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+        await self.get_exposure_result()
+
+    async def get_exposure_status(self,params = {} , ws = None) -> dict:
+        """
+            Async get status of the exposure process
+            Args : None
+            Returns : None
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute get exposure status command"))
+
+        if not self.device.info._is_exposure:
+            return return_error(_("Exposure is not started, please do not execute get exposure status command"))
+
+        res = self.device.get_exposure_status()
+
+        await self.ws.write_message(await self.ws.generate_command(res))
+        
+        if res.get('status') != 0:
+                self.blob.clear()
+            
+        if res.get('params').get('status') is True:
+            self.blob.set()
+        else:
+            self.blob.clear()
+
+        return res
+
+    async def get_exposure_result(self , ws = None) -> dict:
+        """
+            Get the result of the exposure operation
+            Args : None
+            Returns : None
+            NOTE : I'm not sure that whether this function should be called directly by client
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute get exposure result command"))
+        
+        res = self.device.get_exposure_result()
+        res["type"] = "data"
+        await self.ws.write_message(dumps(res))
+        return res
+
+    async def cooling(self , params = {} , ws = None) -> dict:
+        """
+            Async start or stop cooling mode
+            Args :
+                params : dict
+                    enable : bool
+            Return : dict
+        """
+        if self.device is None:
+            return return_error(_("Camera is not connected , please do not execute cooling command"))
+
+        enable = params.get('enable')
+        if enable is None or not isinstance(enable, bool):
+            return return_error(_("Invalid enable value, please specify a correct value"))
+
+        return self.device.cooling(params=params)
+
+    async def cooling_to(self, params = {} , ws = None) -> dict:
+        """
+            Async make the camera cool to specified temperature
+            Args :
+                params : dict
+                    temperature : float
+            Return : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute cooling to command"))
+
+        temperature = params.get('temperature')
+        if temperature is None or not isinstance(temperature,float):
+            return return_error(_("Invalid temperature value provided"))
+
+        res = self.device.cooling_to(params=params)
+        if res.get('status') != 0:
+            return res
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.cooling_thread)
+
+        return return_success(_("Camera started to cooling to the target temperature started successfully"),{})
+
+    async def cooling_thread(self):
+        """
+            Thread to monitor temperature while the cooling_to function is running
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_cooling_status()
+            
+            if not res.get("params").get('status'):
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
+    async def get_current_temperature(self , params = {} , ws = None) -> dict:
+        """
+            Async get the current temperature of the camera\n
+            Args : None
+            Return : dict
+                temperature : float
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get current temperature command"))
+
+        return self.device.get_current_temperature(params=params)
+
+    async def get_cooling_power(self , params = {} , ws = None) -> dict:
+        """
+            Async get the cooling power of the camera\n
+            Args : None
+            Return : dict
+                power : float
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get current cool power command"))
+
+        return self.device.get_cooling_power(params=params)
+
+    async def get_cooling_status(self , params = {} , ws = None) -> dict:
+        """
+            Async get the cooling status of the camera\n
+            Args : None
+            Returns : dict
+                status : bool
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get cooling status command"))
+
+        return self.device.get_cooling_status(params=params)
+    
+    async def get_camera_roi(self , params = {} , ws = None) -> dict:
+        """
+            Async get the roi of the camera frame\n
+            Args : None
+            Returns : dict
+                height : int
+                width : int
+                start_x : int
+                start_y : int
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get camera roi command"))
+        
+        return self.device.get_camera_roi(params=params)
+    
+    async def set_camera_roi(self , params = {} , ws = None) -> dict:
+        """
+            Set the roi of the camera frame\n
+            Args :
+                params : dict
+                    height : int
+                    width : int
+                    start_x : int
+                    start_y : int
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute set camera roi command"))
+        
+        _height = params.get("height",self.device.info._height)
+        _width = params.get("width",self.device.info._width)
+        _start_x = params.get("start_x",self.device.info._start_x)
+        _start_y = params.get("start_y",self.device.info._start_y)
+
+        if not isinstance(_height,int) or not isinstance(_width,int) or not isinstance (_start_x,int) or not isinstance(_start_y,int):
+            logger.error(_("Invalid height or width of the ROI was specified"))
+        
+        return self.device.set_camera_roi(params=params)
+    
+    async def get_gain(self , params = {} , ws = None) -> dict:
+        """
+            Get the gain of the camera\n
+            Args : None
+            Returns : dict
+                gain : int
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get camera gain command"))
+        
+        return self.device.get_gain(params=params)
+    
+    async def set_gain(self, params = {} , ws = None) -> dict:
+        """
+            Set the gain value of the current camera\n
+            Args :
+                params : dict
+                    gain : int
+            Returns : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute set camera gain command"))
+        
+        return self.device.set_gain(params=params)
+    
+    async def get_offset(self , params = {} , ws = None) -> dict:
+        """
+            Get the current offset of the camera\n
+            Args : None
+            Returns : dict
+                offset : int
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get camera offset command"))
+        
+        return self.device.get_offset(params=params)
+    
+    async def set_offset(self, params = {} , ws = None) -> dict:
+        """
+            Set the offset of the camera\n
+            Args :
+                params : dict
+                    offset : int
+            Returns : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute set camera offset command"))
+        
+        return self.device.set_offset(params=params)
+    
+    async def get_binning(self , params = {} , ws = None) -> dict:
+        """
+            Get the current binning of the camera\n
+            Args : None
+            Returns : dict
+                binning : list
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute get camera binning mode command"))
+        
+        return self.device.get_binning(params=params)
+    
+    async def set_binning(self, params = {} , ws = None) -> dict:
+        """
+            Set the binning mode of the camera\n
+            Args :
+                params : dict
+                    binning : list
+            Returns : dict
+        """
+        if self.device is None:
+            return (_("Camera is not connected , please do not execute set camera binning command"))
+        
+        _binning = params.get("binning")
+        if not _binning or not isinstance(_binning, list):
+            logger.error(_("Invalid binning mode specified"))
+
+        return self.device.set_binning(params=params)
+
+    async def call(self, params = {} , ws = None) -> dict:
+        """
+            This function is inspired by GaoLe , though he just call other functions directly.
+            I wanted to cover these additional functions with a simple command.
+            Args:
+                params: dict
+                    command : str # the name of the additional function
+                    params : dict # the parameters for the function
+            Returns : dict # Returns the function called
+        """
+        _command = params.get('command')
+        if _command is None or not isinstance(_command,str):
+            return return_error(_("Invalid command parameter provided"))
+
+        try:
+            command = getattr(self.camera,_command)
+        except AttributeError as e:
+            return return_error(_("Camera command not available"),{"error":e})
+
+        try:
+            res = await command(params.get('params',{}))
+        except Exception as e:
+            return return_error(_("Error executing command"),{"error":e})
+        return res

@@ -318,3 +318,195 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
             "name" : self.info._filter_name,
             "position" : self.info._current_position
         })
+    
+import asyncio
+import tornado.ioloop
+import tornado.websocket
+
+class WSAscomFilterwheel(object):
+    """
+        Websocket filterwheel interface of the AscomFilterwheelAPI class
+    """
+
+    def __init__(self) -> None:
+        """
+            Initial a new WSFilterwheel
+            Args : None
+            Returns : None
+        """
+        self.device = None
+        self.ws = None
+        self.thread = None
+        self.device = AscomFilterwheelAPI()
+
+    def __del__(self) -> None:
+        """
+            Delete a WSFilterwheel
+            Args : None
+            Returns : None
+        """
+
+    def __str__(self) -> str:
+        """
+            Returns the name of the WSFilterwheel class
+            Args : None
+            Returns : None
+        """
+        return "LightAPT Ascom Filterwheel Websocket Wrapper Class"  
+    
+    def init_ws(self , ws : tornado.websocket.WebSocketHandler) -> None:
+        """
+            Initialize the websocket into the class\n
+            Args:
+                ws : tornado.websocket.WebSocketHandler
+            Returns: None
+        """
+        self.ws = ws
+
+    async def connect(self , params = {}) -> None:
+        """
+            Async connect to the filterwheel 
+            Args : 
+                params : dict
+                    device_name : str
+                    host : str # both indi and ascom default is "127.0.0.1"
+                    port : int # for indi port is 7624 , for ascom port is 11111
+            Returns : dict
+                info : dict # BasicaFilterwheelInfo object
+        """
+        if self.device is not None:
+            logger.info(_("Disconnecting from existing filterwheel ..."))
+            await self.disconnect()
+
+        _device_name = params.get('device_name')
+
+        if  _device_name is None:
+            return return_error(_("Type or device name must be specified"))
+        
+        return self.device.connect(params=params)
+
+    async def disconnect(self,params = {}) -> dict:
+        """
+            Async disconnect from the device
+            Args : None
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+        
+        return self.device.disconnect()
+
+    async def reconnect(self,params = {}) -> dict:
+        """
+            Async reconnect to the device
+            Args : None
+            Returns : dict
+                info : dict # just like connect()
+            NOTE : This function is just allowed to be called when the filterwheel had already connected
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.reconnect()
+
+    async def scanning(self,params = {}) -> dict:
+        """
+            Async scanning all of the devices available
+            Args : None
+            Returns : dict
+                list : list # a list of filterwheels available
+        """
+        if self.device is not None:
+            return return_error(_("Filterwheel has already been connected"))
+
+        return self.device.scanning()
+
+    async def polling(self,params = {}) -> dict:
+        """
+            Async polling method to get the newest filterwheel information
+            Args : None
+            Returns : dict
+                info : dict # usually generated from get_dict() function
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.polling()
+
+    # #############################################################
+    #
+    # Following methods are used to control the filterwheel
+    #
+    # #############################################################
+
+    # #############################################################
+    # Current filter
+    # #############################################################
+
+    async def get_current_filter(self,params = {}) -> dict:
+        """
+            Get the current filter of the filter wheel
+            Args : None
+            Returns : dict
+                filter_id : int # id of the current filter
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.get_current_filter()
+
+    # #############################################################
+    # Slew
+    # #############################################################
+
+    async def slew_to(self,params = {}) -> dict:
+        """
+            Filter wheel slew to the current filter
+            Args : dict
+                id : int # id of the target filter
+            Returns : dict
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+
+        _id = params.get('id')
+        if _id is None or not isinstance(_id, int):
+            return return_error(_("Invalid filter id specified"))
+
+        res = self.device.slew_to(params)
+        if res.get("status") != 0:
+            return res
+
+        tornado.ioloop.IOLoop.instance().add_callback(self.slew_thread,_id)
+
+        return res
+
+    async def slew_thread(self , target_id : int) -> None:
+        """
+            Slewing status monitor thread
+        """
+        used_time = 0
+        while used_time <= self.device.info._timeout:
+            res = await self.get_current_filter()
+            
+            if res.get("params").get('position') == target_id:
+                break
+            await asyncio.sleep(0.5)
+            used_time += 0.5
+
+    # ###############################################################
+    # Get all of the available filters
+    # ###############################################################
+
+    async def get_filter_list(self, params = {}) -> dict:
+        """
+            Async get all of the available filters
+            Args : None
+            Returns : dict
+                offset : a list of the filters offsets
+                name : a list of the names of the filters
+        """
+        if self.device is None:
+            return return_error(_("Filterwheel is not connected"))
+
+        return self.device.get_filter_list()

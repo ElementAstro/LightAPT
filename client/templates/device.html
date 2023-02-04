@@ -24,16 +24,22 @@
 
 <head>
 
-    {{ basic.load_basic_meta() }}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 
     <title>设备</title>
 
-    {{ basic.icon() }}
+    <link rel="icon" sizes="16x16" type="image/icon" href="/static/textures/icon.ico">
 
     <!-- -->
     <link rel="stylesheet" href="/static/css/bootstrap5/mdb.dark.min.css">
 
-    {{ basic.load_basic_css() }}
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/static/css/fontawesome/fontawesome.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="/static/css/adminlte.min.css">
 
     <!-- overlayScrollbars -->
     <link rel="stylesheet" href="/static/css/plugins/OverlayScrollbars.min.css">
@@ -45,246 +51,234 @@
     <link rel="stylesheet" href="/static/css/plugins/viewer.min.css">
     <!-- Device -->
     <link rel="stylesheet" href="/static/css/client/device.css">
-    <!-- Celestial -->
-    <link rel="stylesheet" href="/static/css/skymap/celestial.min.css">
 
 </head>
 <!-- Body Part -->
 
-<body class="dark-mode" data-panel-auto-height-mode="height">
+<body class="dark-mode sidebar-collapse hold-transition layout-fixed" data-panel-auto-height-mode="height"
+    style="overflow:hidden">
 
-    {{ basic.loading() }}
+    <!-- loading开始 -->
+    <div id="loading-animation">
+        <div id="loading-animation-center">
+            <div id="loading-animation-center-absolute">
+                <div class="loading_object" id="loading_four"></div>
+                <div class="loading_object" id="loading_three"></div>
+                <div class="loading_object" id="loading_two"></div>
+                <div class="loading_object" id="loading_one"></div>
+            </div>
+        </div>
+    </div>
+    <script>!function () { function e() { setTimeout(() => { $("#loading-animation").fadeOut(540) }, 500) } window.jQuery ? $(document).ready(() => { e() }) : document.onreadystatechange = (() => { "interactive" === document.readyState && e() }) }();</script>
+    <!-- loading 结束 -->
 
     <div class="wrapper">
-        <!-- Main content -->
-        <section class="content" data-widget="iframe">
+        <!-- Main Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-dark">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <!-- Home -->
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="#" class="nav-link">LightAPT WebUI</a>
+                </li>
+            </ul>
+
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto nav nav-tabs text-white  mb-3">
+                <!-- Device Navbar -->
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-device-tab" data-toggle="pill" href="#tab-device" role="tab"
+                        aria-controls="tab-device" aria-selected="true">
+                        <i class="fas fa-plug"></i>设备</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-camera-tab" data-toggle="pill" href="#tab-camera" role="tab"
+                        aria-controls="tab-camera" aria-selected="false">
+                        <i class="fas fa-camera"></i>相机</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-telescope-tab" data-toggle="pill" href="#tab-telescope" role="tab"
+                        aria-controls="tab-telescope" aria-selected="false">
+                        <i class="fas fa-telescope"></i>赤道仪</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-focuser-tab" data-toggle="pill" href="#tab-focuser" role="tab"
+                        aria-controls="tab-focuser" aria-selected="false">
+                        <i class="fas fa-camera-viewfinder"></i>对焦</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-guider-tab" data-toggle="pill" href="#tab-guider" role="tab"
+                        aria-controls="tab-guider" aria-selected="false">
+                        <i class="fas fa-star"></i>导星</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-solver-tab" data-toggle="pill" href="#tab-solver" role="tab"
+                        aria-controls="tab-solver" aria-selected="false">
+                        <i class="fas fa-globe"></i>解析</a>
+                </li>
+                <!-- /. Device Navbar -->
+                <!-- Fullscreen Toggle -->
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>全屏
+                    </a>
+                </li>
+                <!-- ./ Fullscreen Toggle -->
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
+                        <i class="fas fa-table"></i>UI自定义
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- /. Main Navbar -->
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper h-100">
             <div class="container-fluid">
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-7 ">
 
                         <div class="row">
 
-                            <div class="col-md-12">
+                            <div class="col-md-12 ">
                                 <div class="card card-primary">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-image"></i>
-                                            图像
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" id="refresh_image">
-                                                <i class="fas fa-redo"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-tool btn-sm"
-                                                data-card-widget="collapse">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                        </div>
-                                        <!-- /.card-tools -->
-                                    </div>
-                                    <div class="card-body">
+
+                                    <div class="card-body" id="info_container">
                                         <div class="row d-flex">
-                                            <!-- 工具栏 -->
-                                            <div class="col-sm-2">
-                                                <!-- 直方图 -->
-                                                <div class="row">
-                                                    <button data-method="offset" data-type="lb" class="btn btn-outline-white layui-btn">
-                                                        <i class="fas fa-line-chart"></i>
-                                                    </button>
-                                                </div>
-                                                <!-- 导星 -->
-                                                <div class="row pt-2">
-                                                    <button data-method="offset" data-type="lb" class="btn btn-outline-white layui-btn">
-                                                        <i class="fas fa-star"></i>
-                                                    </button>
-                                                </div>
-                                                <!-- 解析 -->
-                                                <div class="row pt-2">
-                                                    <button data-method="offset" data-type="lb" class="btn btn-outline-white layui-btn">
-                                                        <i class="fas fa-planet-moon"></i>
-                                                    </button>
-                                                </div>
-                                                <!-- 拍摄进度 -->
-                                                <div class="row pt-2">
-                                                    <button data-method="offset" data-type="lb" class="btn btn-outline-white layui-btn">
-                                                        <i class="fas fa-timer"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
                                             <!-- 最新的图像 -->
-                                            <div class="col-sm-10">
-                                                <div class="docs-galley mb-3">
-                                                    <ul class="docs-pictures clearfix">
-                                                        <li>
-                                                            <img data-original="/static/textures/background.png"
-                                                                src="/static/textures/background.png" alt="LightAPT">
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            <div class="col-sm-12">
+                                                <!-- Tabs navs -->
+                                                <ul class="nav nav-tabs mb-3" id="ex1" role="tablist">
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link active" id="ex1-tab-1" data-mdb-toggle="tab"
+                                                            href="#tab-image" role="tab" aria-controls="tab-image"
+                                                            aria-selected="true">
+                                                            <i class="fas fa-image"></i>
+                                                            图像
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="ex1-tab-3" data-mdb-toggle="tab"
+                                                            href="#tab-image-info" role="tab"
+                                                            aria-controls="tab-sequence" aria-selected="false">
+                                                            <i class="fas fa-info"></i>
+                                                            图像信息
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="ex1-tab-2" data-mdb-toggle="tab"
+                                                            href="#tab-guideline" role="tab"
+                                                            aria-controls="tab-guideline" aria-selected="false">
+                                                            <i class="fas fa-chart-line"></i>
+                                                            导星曲线
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="ex1-tab-3" data-mdb-toggle="tab"
+                                                            href="#tab-sequence" role="tab" aria-controls="tab-sequence"
+                                                            aria-selected="false">
+                                                            <i class="fas fa-timer"></i>
+                                                            序列
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                                <!-- Tabs navs -->
 
-                                        
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-
-                                <div class="card card-primary">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-line-chart"></i>
-                                            导星曲线
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" id="refresh_guiding_line">
-                                                <i class="fas fa-redo"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-tool btn-sm"
-                                                data-card-widget="collapse">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                        </div>
-                                        <!-- /.card-tools -->
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="chart">
-                                                    <canvas id="guiding_line"
-                                                        style="min-height: 150px; height: 150px; max-height: 250px; max-width: 100%;"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="row">
-                                                    <div class="col-md-3">
-                                                        <div class="form-group form-group-sm">
-                                                            <label>X轴</label>
-                                                            <select class="form-control select2 form-control-sm"
-                                                                id="x_axis" style="width: 100%;">
-                                                                <option value="50">50</option>
-                                                                <option value="100" selected="selected">100</option>
-                                                                <option value="150">150</option>
-                                                                <option value="200">200</option>
-                                                            </select>
+                                                <!-- Tabs content -->
+                                                <div class="tab-content" id="ex1-content">
+                                                    <div class="tab-pane fade show active" id="tab-image"
+                                                        role="tabpanel" aria-labelledby="ex1-tab-1">
+                                                        <div class="docs-galley mb-3">
+                                                            <ul class="docs-pictures clearfix">
+                                                                <li>
+                                                                    <img data-original="/static/textures/background.png"
+                                                                        src="/static/textures/background.png"
+                                                                        alt="LightAPT">
+                                                                </li>
+                                                            </ul>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-3">
-                                                        <div class="form-group form-group-sm">
-                                                            <label>Y轴</label>
-                                                            <select class="form-control select2 form-control-sm"
-                                                                id="y_axis" style="width: 100%;">
-                                                                <option value="1">1</option>
-                                                                <option value="2">2</option>
-                                                                <option value="4" selected="selected">4</option>
-                                                                <option value="8">8</option>
-                                                                <option value="16">16</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <div class="row">
-                                                            <div class="col-md-6">
-                                                                <button id="guiding_line_refresh" type="button"
-                                                                    class="btn btn-block btn-outline-green btn-sm">
-                                                                    <i class="fas fa-redo"></i>
-                                                                    刷新
-                                                                </button>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <button id="guiding_line_clear" type="button"
-                                                                    class="btn btn-block btn-outline-red btn-sm">
-                                                                    <i class="fas fa-brush"></i>
-                                                                    清除
-                                                                </button>
-                                                            </div>
-                                                        </div>
+                                                    <div class="tab-pane fade" id="tab-guideline" role="tabpanel"
+                                                        aria-labelledby="ex1-tab-2">
 
-                                                        <div class="row pl-2 pt-2">
-                                                            <div class="col-md-6">
-                                                                <label>修正线</label>
-                                                                <div class="icheck-success d-inline">
-                                                                    <input class="input-sm" type="checkbox" checked
-                                                                        id="correction_line">
-                                                                    <label for="correction_line"></label>
-                                                                </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="tab-sequence" role="tabpanel"
+                                                        aria-labelledby="ex1-tab-3">
+
+                                                        <div class="mt-3">
+                                                            <div
+                                                                class="text-center p-2 extraSmallText text-uppercase text-muted">
+                                                                单张信息
                                                             </div>
-                                                            <div class="col-md-6">
-                                                                <label>趋势线</label>
-                                                                <div class="icheck-success d-inline">
-                                                                    <input class="input-sm" type="checkbox" checked
-                                                                        id="trend_line">
-                                                                    <label for="trend_line"></label>
-                                                                </div>
+                                                            <ul class="list-group bg-dark text-small">
+                                                                <li class="list-group-item bg-dark mount-panel-item">
+                                                                    <div class="text-center shInField"
+                                                                        id="fileShotText"></div>
+                                                                </li>
+                                                                <li
+                                                                    class="list-group-item bg-dark d-flex mount-panel-item ">
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            曝光时间</div>
+                                                                        <div class="text-center shInField"
+                                                                            id="expoText"></div>
+                                                                    </div>
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            已花费</div>
+                                                                        <div class="text-center shInField text-muted"
+                                                                            id="elapsedText"></div>
+                                                                    </div>
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            剩余</div>
+                                                                        <div class="text-center shInField"
+                                                                            id="remainText"></div>
+                                                                    </div>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <div
+                                                                class="text-center p-2 extraSmallText text-uppercase text-muted">
+                                                                序列信息
                                                             </div>
+
+                                                            <ul class="list-group bg-dark text-small">
+                                                                <li class="list-group-item bg-dark mount-panel-item">
+                                                                    <div class="text-center" id="runSeqText">
+                                                                    </div>
+                                                                </li>
+                                                                <li
+                                                                    class="list-group-item bg-dark d-flex mount-panel-item ">
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            开始时间</div>
+                                                                        <div class="text-center" id="seqStartTime">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            剩余时间</div>
+                                                                        <div class="text-center" id="seqRemain">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-4 p-0">
+                                                                        <div class="text-center text-muted ">
+                                                                            结束时间
+                                                                        </div>
+                                                                        <div class="text-center" id="seqEndTime"></div>
+                                                                    </div>
+                                                                </li>
+                                                            </ul>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
+                                                <!-- Tabs content -->
 
 
-                            </div>
-                            <div class="col-md-12">
-
-                                <div class="card card-primary">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-timer"></i>
-                                            拍摄进度
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" id="refresh_process">
-                                                <i class="fas fa-redo"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-tool btn-sm"
-                                                data-card-widget="collapse">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                        </div>
-                                        <!-- /.card-tools -->
-                                    </div>
-                                    <div class="card-body">
-
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="card card-primary">
-                                    <div class="card-header">
-                                        <h3 class="card-title">
-                                            <i class="fas fa-map"></i>
-                                            星图
-                                        </h3>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool btn-sm"
-                                                data-card-widget="collapse">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                        </div>
-                                        <!-- /.card-tools -->
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-12" hidden>
-                                                <div>
-                                                    <div style="width: 100%;" class="img-responsive" id="celestial-map">
-                                                    </div>
-                                                </div>
-                                                <div id="celestial-form"></div>
                                             </div>
                                         </div>
 
@@ -293,69 +287,15 @@
                                 </div>
                             </div>
                         </div>
-
-
-
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-5">
 
                         <div class="card card-primary">
-                            <div class="card-header">
-                                <h3 class="card-title">
-                                    <i class="fas fa-plug"></i>
-                                    设备控制
-                                </h3>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </div>
-                                <!-- /.card-tools -->
-                            </div>
+
                             <div class="card-body">
 
                                 <div class="card card-info card-outline card-tabs p-0">
-                                    <div class="card-header">
-                                        <ul class="nav nav-tabs" id="tabs-devices-tab" role="tablist">
-                                            <li class="nav-item">
-                                                <a class="nav-link active" id="tab-device-tab" data-toggle="pill"
-                                                    href="#tab-device" role="tab" aria-controls="tab-device"
-                                                    aria-selected="true">
-                                                    <i class="fas fa-plug"></i>设备</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="tab-camera-tab" data-toggle="pill"
-                                                    href="#tab-camera" role="tab" aria-controls="tab-camera"
-                                                    aria-selected="false">
-                                                    <i class="fas fa-camera"></i>相机</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="tab-telescope-tab" data-toggle="pill"
-                                                    href="#tab-telescope" role="tab" aria-controls="tab-telescope"
-                                                    aria-selected="false">
-                                                    <i class="fas fa-telescope"></i>赤道仪</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="tab-focuser-tab" data-toggle="pill"
-                                                    href="#tab-focuser" role="tab" aria-controls="tab-focuser"
-                                                    aria-selected="false">
-                                                    <i class="fas fa-camera-viewfinder"></i>对焦</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="tab-guider-tab" data-toggle="pill"
-                                                    href="#tab-guider" role="tab" aria-controls="tab-guider"
-                                                    aria-selected="false">
-                                                    <i class="fas fa-star"></i>导星</a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a class="nav-link" id="tab-solver-tab" data-toggle="pill"
-                                                    href="#tab-solver" role="tab" aria-controls="tab-solver"
-                                                    aria-selected="false">
-                                                    <i class="fas fa-globe"></i>解析</a>
-                                            </li>
-                                        </ul>
-                                    </div>
                                     <div class="card-body">
                                         <div class="tab-content" id="tabs-devices-tabContent">
                                             <div class="tab-pane fade show active" id="tab-device" role="tabpanel"
@@ -372,14 +312,6 @@
                                                                 <select id="camera"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="相机">
-                                                                    {% for camera in cameras %}
-                                                                    {% if saved_camera == camera %}
-                                                                    <option selected>{{ camera }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ camera }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -392,15 +324,6 @@
                                                                 <select id="telescope"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="赤道仪">
-                                                                    {% for telescope in telescopes %}
-                                                                    {% if saved_telescppe == telescope
-                                                                    %}
-                                                                    <option selected>{{ telescope }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ telescope }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -415,16 +338,6 @@
                                                                 <select id="filterwheel"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="滤镜轮">
-                                                                    {% for filterwheel in filterwheels
-                                                                    %}
-                                                                    {% if saved_filterwheel ==
-                                                                    filterwheel %}
-                                                                    <option selected>{{ filterwheel }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ filterwheel }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -436,14 +349,6 @@
                                                                 <select id="focuser"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="电调">
-                                                                    {% for focuser in focusers %}
-                                                                    {% if saved_focuser == focuser %}
-                                                                    <option selected>{{ focuser }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ focuser }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -455,14 +360,6 @@
                                                                 <select id="guider"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="导星">
-                                                                    {% for guider in guiders %}
-                                                                    {% if saved_guider == guider %}
-                                                                    <option selected>{{ guider }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ guider }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -476,14 +373,6 @@
                                                                 <select id="solver"
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="解析">
-                                                                    {% for solver in solvers %}
-                                                                    {% if saved_solver == solver %}
-                                                                    <option selected>{{ solver }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ solver }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -495,14 +384,6 @@
                                                                 <select id="plugins" multiple
                                                                     class="form-control form-control-sm selectpicker show-tick"
                                                                     data-live-search="true" title="插件">
-                                                                    {% for plugins in pluginss %}
-                                                                    {% if saved_plugins == plugins %}
-                                                                    <option selected>{{ plugins }}
-                                                                    </option>
-                                                                    {% else %}
-                                                                    <option>{{ plugins }}</option>
-                                                                    {% endif %}
-                                                                    {% endfor %}
                                                                 </select>
                                                             </div>
                                                         </div>
@@ -1190,53 +1071,18 @@
 
                             </div>
                         </div>
-
-                        <div class="card card-primary p-0">
-                            <div class="card-header">
-                                <h3 class="card-title">
-                                    <i class="fas fa-server"></i>
-                                    服务器
-                                </h3>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </div>
-                                <!-- /.card-tools -->
-                            </div>
-                            <div class="card-body">
-
-
-                            </div>
-                        </div>
-
-                        <div class="card card-primary p-0">
-                            <div class="card-header">
-                                <h3 class="card-title">
-                                    <i class="fas fa-paper-plane"></i>
-                                    日志
-                                </h3>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
-                                        <i class="fas fa-paint-brush"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                </div>
-                                <!-- /.card-tools -->
-                            </div>
-                            <div class="card-body">
-
-
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
             </div>
-        </section>
+        </div>
+        <!-- Main content -->
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+        <!-- /.control-sidebar -->
     </div>
 
     <div class="modal fade" id="ShowImageInfo" tabindex="-1" aria-labelledby="ShowImageInfoLabel" aria-hidden="true">
@@ -1256,12 +1102,10 @@
                                         图像信息
                                     </h3>
                                     <div class="card-tools">
-                                        <button type="button" class="btn btn-tool"
-                                            id="refresh_hfd_line">
+                                        <button type="button" class="btn btn-tool" id="refresh_hfd_line">
                                             <i class="fas fa-redo"></i>
                                         </button>
-                                        <button type="button" class="btn btn-tool btn-sm"
-                                            data-card-widget="collapse">
+                                        <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
                                             <i class="fas fa-minus"></i>
                                         </button>
                                     </div>
@@ -1269,8 +1113,7 @@
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-group bg-dark text-sm list-group-small">
-                                        <li
-                                            class="list-group-item bg-dark d-flex mount-panel-item ">
+                                        <li class="list-group-item bg-dark d-flex mount-panel-item ">
                                             <div class="col-2 p-0 text-muted text-left">
                                                 目标</div>
                                             <div class="col-4 text-right" id="SequenceTarget"></div>
@@ -1280,8 +1123,7 @@
                                             <div class="col-4 text-right" id="Filter">
                                             </div>
                                         </li>
-                                        <li
-                                            class="list-group-item bg-dark d-flex mount-panel-item ">
+                                        <li class="list-group-item bg-dark d-flex mount-panel-item ">
                                             <div class="col-2 p-0 text-muted text-left">
                                                 时间 (s)</div>
                                             <div class="col-4 text-right" id="Expo">
@@ -1291,8 +1133,7 @@
                                             <div class="col-4 text-right" id="Bin">
                                             </div>
                                         </li>
-                                        <li
-                                            class="list-group-item bg-dark d-flex mount-panel-item ">
+                                        <li class="list-group-item bg-dark d-flex mount-panel-item ">
                                             <div class="col-2 p-0 text-muted text-left">
                                                 星点
                                             </div>
@@ -1318,19 +1159,151 @@
         </div>
     </div>
 
-    {{ basic.load_danger_model() }}
+    <!-- Modal container -->
+    <div class="container">
+        <!-- Central Modal Medium Danger -->
+        <div class="modal fade" id="centralModalDanger" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-notify modal-danger" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header">
+                        <p class="heading lead" id="errorModalTitle">错误信息</p>
+                        <button type="button" class="close modal-voy-btn" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
+                    <!--Body-->
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle fa-4x mb-3 animated bounceIn"></i>
+                            <p id="errorMessage" class="note note-danger">
+                                未知错误
+                            </p>
+                            <p id="contactMessage" class="text-muted">
+                                <small>如果你有任何问题，请将详细细节告知开发者</small>
+                            </p>
+                        </div>
+                    </div>
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <a class="btn btn-outline-danger modal-voy-btn"
+                            href="mailto:astro_air@126.com,fran.dibiase@gmail.com">
+                            <i class="fas fa-envelope mr-1"></i>联系我们</a>
+                        <button type="button" class="btn btn-danger waves-effect modal-voy-btn" data-dismiss="modal">
+                            Ok
+                        </button>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+    </div>
+    <!-- Modal container end -->
 
-	{{ basic.load_warning_model() }}
+    <div class="container">
+        <!-- Central Modal Medium Warning -->
+        <div class="modal fade" id="modalDoubleWarning" aria-hidden="true">
+            <div class="modal-dialog modal-notify modal-warning modal-lg" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header">
+                        <p class="heading lead" id="modalWarnTit">确认操作?</p>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
+                    <!--Body-->
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <i class="fas fa-question fa-4x mb-3 animated rotateIn text-danger"></i>
+                            <p id="contWarnModal" class="text-warning"></p>
+                            <p>你确定要执行这步操作吗?</p>
+                        </div>
+                    </div>
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <a type="button" id="confirmDoubleWarn" class="btn btn-sm btn-warning btn-block">
+                                    确认
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            </div>
+                            <div class="col-sm-6">
+                                <a type="button" class="btn btn-sm btn-outline-warning waves-effect btn-block"
+                                    data-dismiss="modal">
+                                    Nope
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+        <!-- Central Modal Medium Warning-->
+    </div>
 
-	{{ basic.load_info_model() }}
+    <!-- Container Modal -->
+    <div class="container">
+        <!-- Central Modal Medium Generic info -->
+        <div class="modal fade" id="infoModalGeneric" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2"
+            aria-hidden="true">
+            <div class="modal-dialog modal-notify modal-info" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header">
+                        <p class="heading lead">信息</p>
+                        <button type="button" id="closeModalInfo" class="close modal-voy-btn" data-dismiss="modal"
+                            aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
 
-    {{ basic.load_basic_js() }}
+                    <!--Body-->
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary m-5" role="status">
+                                <span class="sr-only">常规信息</span>
+                            </div>
+                            <p id="infoModalMessage" class="note note-info">
+                                常规消息...
+                            </p>
+                            <p id="genericMessageinfo" class="text-muted">
+                                <small></small>
+                            </p>
+                        </div>
+                    </div>
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-primary modal-voy-btn" data-dismiss="modal">
+                            Ok
+                        </button>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+        <!-- Central Modal Medium Danger-->
+    </div>
+    <!-- Container Modal end -->
+
+    <!-- jQuery -->
+    <script src="/static/js/jquery/jquery.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="/static/js/bootstrap/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="/static/js/adminlte.min.js"></script>
 
     <!-- overlayScrollbars -->
     <script src="/static/js/jquery/jquery.overlayScrollbars.min.js"></script>
     <script>
         $(function () {
-            $('body').overlayScrollbars({});
+            $('#info_container').overlayScrollbars({});
             $('#autofocus_offcanvas_body').overlayScrollbars({});
         });
     </script>
@@ -1349,14 +1322,10 @@
     <script src="/static/js/bootstrap5/mdb.min.js"></script>
     <!-- Bootstrap5 -->
     <script src="/static/js/bootstrap5/bootstrap.bundle.min.js"></script>
-    <!-- D3 -->
-    <script src="/static/js/skymap/d3.min.js"></script>
-    <!-- D3 GEO -->
-    <script src="/static/js/skymap/d3.geo.projection.min.js"></script>
-    <!-- Celestial -->
-    <script src="/static/js/skymap/celestial.min.js"></script>
     <!-- Device JS -->
     <script src="/static/js/client/devices.js"></script>
+    <!-- UI custom -->
+    <script src="/static/js/client/client.js"></script>
 
     <script>
         $(function () {
