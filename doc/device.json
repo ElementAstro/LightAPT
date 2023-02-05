@@ -1,0 +1,167 @@
+{
+    "camera": [
+        {
+            "zh": "相机模拟",
+            "en": "CCD Simulator",
+            "driver": "indi_simulator_ccd"
+        },
+        {
+            "zh": "猪窝",
+            "en": "ZWO CCD",
+            "driver": "indi_asi_ccd"
+        },
+        {
+            "zh": "QHY",
+            "en": "QHY CCD",
+            "driver": "indi_qhy_ccd"
+        },
+        {
+            "zh": "图谱",
+            "en": "Toupcam",
+            "driver": "indi_toupcam_ccd"
+        },
+        {
+            "zh": "尼康",
+            "en": "Nikon DSLR",
+            "driver": "indi_nikon_ccd"
+        },
+        {
+            "zh": "佳能",
+            "en": "Canon DSLR",
+            "driver": "indi_canon_ccd"
+        },
+        {
+            "zh": "索尼",
+            "en": "Sony DSLR",
+            "driver": "indi_sony_ccd"
+        }
+    ],
+    "telescope": [
+        {
+            "en": "GotoNova 8400 Kit",
+            "zh": "GotoNova 8400 Kit",
+            "driver": "indi_lx200gotonova"
+        },
+        {
+            "en": "ZEQ25",
+            "zh": "ZEQ25",
+            "driver": "indi_lx200zeq25"
+        },
+        {
+            "zh": "IEQPro/CEM60",
+            "en": "IEQ",
+            "driver": "indi_ieq_telescope"
+        },
+        {
+            "zh": "CEM120",
+            "en": "CEM120",
+            "driver": "indi_ioptronv3_telescope"
+        },
+        {
+            "zh": "EQMOD",
+            "en": "EQMOD",
+            "driver": "indi_eqmod_telescope"
+        },
+        {
+            "zh": "Skywatcher Alt-Az",
+            "en": "Skywatcher Alt-Az",
+            "driver": "indi_skywatcherAltAzMount"
+        },
+        {
+            "zh": "SynScan",
+            "en": "SynScan",
+            "driver": "indi_synscan_telescope"
+        },
+        {
+            "zh": "AZ-GTi",
+            "en": "AZ-GTi",
+            "driver": "indi_azgti_telescope"
+        },
+        {
+            "zh": "Celestron GPS",
+            "en": "Celestron GPS",
+            "driver": "indi_celestron_gps"
+        },
+        {
+            "zh": "Celestron AUX",
+            "en": "Celestron AUX",
+            "driver": "indi_celestron_aux"
+        },
+        {
+            "en": "OnStep",
+            "zh": "OnStep",
+            "driver": "indi_lx200_OnStep"
+        },
+        {
+            "zh": "望远镜模拟",
+            "en": "Telescope Simulator",
+            "driver": "indi_simulator_telescope"
+        },
+        {
+            "en": "ZWO AM5",
+            "zh": "ZWO AM5",
+            "driver": "indi_lx200am5"
+        }
+    ],
+    "focuser": [
+        {
+            "en": "ASI EAF",
+            "zh": "ASI EAF",
+            "driver": "indi_asi_focuser"
+        },
+        {
+            "en": "Focuser Simulator",
+            "zh": "对焦模拟",
+            "driver": "indi_simulator_focus"
+        },
+        {
+            "en": "OnStep",
+            "zh": "OnStep",
+            "driver": "indi_lx200_OnStep"
+        }
+    ],
+    "filterwheels": [
+        {
+            "en": "Filter Simulator",
+            "zh": "滤镜轮模拟",
+            "driver": "indi_simulator_wheel"
+        },
+        {
+            "en": "QHYCFW1",
+            "zh": "QHYCFW1",
+            "driver": "indi_qhycfw1_wheel"
+        },
+        {
+            "en": "QHYCFW2",
+            "zh": "QHYCFW2",
+            "driver": "indi_qhycfw2_wheel"
+        },
+        {
+            "en": "QHYCFW3",
+            "zh": "QHYCFW3",
+            "driver": "indi_qhycfw3_wheel"
+        },
+        {
+            "en": "Manual Filter",
+            "zh": "手动滤镜轮",
+            "driver": "indi_manual_wheel"
+        },
+        {
+            "en": "ASI EFW",
+            "zh": "ASI EFW",
+            "driver": "indi_asi_wheel"
+        }
+    ],
+    "polar": [
+        {
+            "en": "iOptron iPolar",
+            "zh": "iPolar",
+            "driver": "indi_v4l2_ccd"
+        },
+        {
+            "en": "PolarMaster",
+            "zh": "极霸",
+            "driver": "indi_qhy_ccd"
+        }
+    ]
+}

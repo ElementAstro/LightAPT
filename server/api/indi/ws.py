@@ -122,8 +122,7 @@ class INDIWebsocketWorker(object):
             return self.focuser
         elif device_type == 'filter':
             return self.filter_wheel
-        else:
-            return None
+        return None
 
     def __print_indi_command(self, *args):
         try:

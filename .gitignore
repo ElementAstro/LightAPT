@@ -10,6 +10,8 @@ test.py
 .vscode
 obsolete
 kd-u64.fits
+CMakeFiles
+Makefile
 # Distribution / packaging
 .Python
 build/

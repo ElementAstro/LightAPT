@@ -46,12 +46,7 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             Returns : None
         """
         super().__init__(application, request, **kwargs)
-        self.camera = None
-        self.telescope = None
-        self.focuser = None
-        self.filterwheel = None
-        self.sovler = None
-        self.guider = None
+        self.worker = None
 
     def __del__(self) -> None:
         """
@@ -149,76 +144,18 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             return
         # Run the command and wait for the response)
         try:
-            res = await self.run_command(
+            # NOTE : There the websocket instance will be loaded into the function 
+            res = await self.worker.run_command(
                 command["device"],
                 command["event"],
                 command["params"],
+                self
             )
         except KeyError as e:
             logger.error(_("Failed to execute command : {}").format(e))
             await self.write_message({"status": 1, "message": "Failed to execute command"})
         # Return the response to client
         await self.write_message(json.dumps(await self.generate_command(res)))
-
-    async def run_command(self, device : str, command : str , params : dict) -> dict:
-        """
-            Execute the command asynchronously and return the response\n
-            Args : 
-                device : str # device type like "cameras" or "telescope"
-                command : str # command to execute
-                params : dict # parameters
-            Returns : dict
-                status : int # status code
-                message : str # message
-                params : dict # parameters to return to client
-        """
-        _command = None
-        if device == "camera":
-            # Pay attention to if the camera command is available , the following devices are the same
-            try:
-                _command = getattr(self.camera,command)
-            except AttributeError as e:
-                return return_error(_("Camera command not available"),{"error":e})
-        elif device == "telescope":
-            try:
-                _command = getattr(self.telescope,command)
-            except AttributeError as e:
-                return return_error(_("Telescope command not available"),{"error":e})
-        elif device == "focuser":
-            try:
-                _command = getattr(self.focuser,command)
-            except AttributeError as e:
-                return return_error(_("Focuser command not available"),{"error":e})
-        elif device == "filterwheel":
-            try:
-                _command = getattr(self.filterwheel,command)
-            except AttributeError as e:
-                return return_error(_("Filterwheel command not available"),{"error":e})
-        elif device == "guider":
-            try:
-                _command = getattr(self.guider,command)
-            except AttributeError as e:
-                return return_error(_("Guider command not available"),{"error":e})
-        elif device == "sovler":
-            try:
-                _command = getattr(self.sovler,command)
-            except AttributeError as e:
-                return return_error(_("Solver command not available"),{"error":e})
-        else:
-            return return_error(_("Unknown device type"))
-
-        res = {
-            "status": 0,
-            "message": "",
-            "params": {}
-        }
-        try:
-            res = await _command(params)
-        except Exception as e:
-            logger.error(_("Error executing command : {}").format(e))
-            return return_error(_("Error executing command"),{"error":e})
-        return res
-
         
     async def generate_command(self, params : dict) -> dict:
         """
@@ -234,81 +171,6 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             r.update(params)
         return r
     
-
-    def start_device(self, server_type : str , device_type : str , device_name : str , status : bool) -> bool:
-        """
-            Start or stop a device
-            Args:
-                server_type : str # indi or ascom
-                device_type : str
-                device_name : str
-                status : bool
-            Returns: bool
-        """
-        if device_type == "telescope":
-            if status:
-                if self.telescope is not None:
-                    logger.info("Disconnecting from the existing telescope")
-                    self.telescope.disconnect()
-                if server_type == "ascom":
-                    from server.api.ascom.telescope import WSAscomTelescope
-                    self.telescope = WSAscomTelescope(self)
-                elif server_type == "indi":
-                    from server.api.indi.telescope import IndiTelescopeDevice
-                    this_indi_device = None
-                    if self.indi_client is None:
-                        from server.api.indi.client import IndiClient
-                        self.indi_client,this_indi_device = IndiClient()
-                        self.indi_client,this_indi_device.connectServer
-                        this_indi_device = self.indi_client,this_indi_device.getDevice(device_name)
-                        if not this_indi_device:
-                            logger.error("Failed to get device")
-                            return False
-                        logger.info(f'connecting new device {device_type}, {device_name}')
-                    self.telescope = IndiTelescopeDevice(self.indi_client,this_indi_device)
-                else:
-                    logger.error(f"Unknown device type {device_type}")
-                    return False
-                self.telescope.connect()
-                return True
-            else:
-                if self.telescope:
-                    self.telescope.disconnect()
-                    self.telescope = None
-                return True
-        elif device_type == "camera":
-            if status:
-                if self.camera is not None:
-                    logger.info("Disconnecting from the existing camera")
-                    self.camera.disconnect()
-                if server_type == "ascom":
-                    from server.api.ascom.camera import WSAscomCamera
-                    self.camera = WSAscomCamera(self)
-                elif server_type == "indi":
-                    from server.api.indi.camera import INDICameraAPI
-                    this_indi_device = None
-                    if self.indi_client is None:
-                        from server.api.indi.client import IndiClient
-                        self.indi_client,this_indi_device = IndiClient()
-                        self.indi_client,this_indi_device.connectServer
-                        this_indi_device = self.indi_client,this_indi_device.getDevice(device_name)
-                        if not this_indi_device:
-                            logger.error("Failed to get device")
-                            return False
-                        logger.info(f'connecting new device {device_type}, {device_name}')
-                    self.camera = INDICameraAPI(self.indi_client,this_indi_device)
-                else:
-                    logger.error(f"Unknown device type {device_type}")
-                    return False
-                self.telescope.connect()
-                return True
-            else:
-                if self.telescope:
-                    self.telescope.disconnect()
-                    self.telescope = None
-                return True
-
-
 # #################################################################
 # Login Module
 # #################################################################
