@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Special for LightAPT
 sdata/
 logs/
 test/
@@ -11,7 +13,10 @@ test.py
 obsolete
 kd-u64.fits
 CMakeFiles
-Makefile
+indi/Makefile
+rebind.so
+rebind.o
+
 # Distribution / packaging
 .Python
 build/
