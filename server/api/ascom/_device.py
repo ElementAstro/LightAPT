@@ -47,7 +47,8 @@ from threading import Lock
 from typing import List
 import requests
 from secrets import randbelow
-from libs.alpyca.exceptions import NotImplementedException,InvalidValueException,ValueNotSetException,NotConnectedException,ParkedException,SlavedException,InvalidOperationException,ActionNotImplementedException,DriverException,AlpacaRequestException     # Sorry Python purists
+
+from _exceptions import NotImplementedException,InvalidValueException,ValueNotSetException,NotConnectedException,ParkedException,SlavedException,InvalidOperationException,ActionNotImplementedException,DriverException,AlpacaRequestException     # Sorry Python purists
 
 API_VERSION = 1
 

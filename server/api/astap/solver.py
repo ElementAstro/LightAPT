@@ -18,70 +18,88 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from io import BytesIO
-from pathlib import Path
 import subprocess
-import tempfile
-from astropy import wcs
 import numpy as np
+
+from ...logging import logger , return_error , return_success
 
 class AstapSolveAPI(object):
     """
         Astap solve API via native command line interface
     """
 
-    def solve(self,image, ra_h=None, dec_d=None, radius_d=None, fov_d=None, down_sample=None, debug=False) -> dict:
+    @staticmethod
+    def solve(image, ra = None, dec = None, radius = None, fov = None, downsample = None, debug = False ,update = False , _wcs = True , timeout = 60) -> dict:
         """
+            Solve the given image with the parameters\n
+            Args:
+                image : str # the path to the image or just the image\n
+                The following parameters are all optional but can make solver faster
+                ra : float # current RA
+                dec : float # current dec
+                radius : float / str # range to search
+                fov : float # FOV of the camera
+                downsample : int # downsample , 1 , 2 , 4 , 0 means auto
+                debug : bool # debug mode , will have more output
+                update : bool # if the image type is not fits , write a new ftis image
+                wcs : bool # write a wcs file like astrometry
+                timeout : int # timeout in seconds
+            Returns : dict
+
+        """
+        if image is None or not isinstance(image,(str,np.ndarray)):
+            return #return_error("Unknown image type was specified")
         
-        """
-        tmp = tempfile.TemporaryDirectory()
-
-        output = BytesIO()
-        output.write(
-            b'RAW1' + image.size[0].to_bytes(4, 'little') + image.size[1].to_bytes(4, 'little') + np.asarray(image).tobytes()
-        )
-
-        name = Path(f'{tmp.name}/stdin').as_posix()
-
-        command = [
-            self.program.name, '-f', 'stdin', '-o', name
-        ]
-
-        if ra_h is not None:
-            command.extend(['-ra', str(ra_h)])
-        if dec_d is not None:
-            command.extend(['-spd', str(dec_d + 90)])
-        if radius_d is not None:
-            command.extend(['-r', str(radius_d)])
-        if fov_d is not None:
-            command.extend(['-fov', str(fov_d)])
-        if down_sample is not None:
-            command.extend(['-z', str(down_sample)])
+        command = ["astap_cli"]
+        # check arguments
+        # TODO : both ra and dec should be converted to str if the format is float
+        if ra is not None:
+            command.extend(['-ra', str(ra)])
+        if dec is not None:
+            command.extend(['-spd', str(dec + 90)])
+        if radius is not None:
+            command.extend(['-r', str(radius)])
+        if fov is not None:
+            command.extend(['-fov', str(fov)])
+        if downsample is not None:
+            command.extend(['-z', str(downsample)])
         if debug == True:
             command.append('-debug')
-        
-        proc = subprocess.Popen(command, executable=self.program, stdin=subprocess.PIPE, bufsize=0)
-        proc.communicate(input=output.getvalue())
+        if update == True:
+            command.append('-update')
+        if _wcs == True:
+            command.append('-wcs')
 
-        with open(f'{name}.wcs', 'r') as result:
-            d = {}
-            for l in result:
-                if l.rstrip() and 'PLTSOLVD' not in l and 'COMMENT' not in l:
-                    k, v = l.split('=')
-                    v = v.split('/')[0]
-                    try:
-                        d[k.rstrip(' ')] = float(v)
-                    except ValueError:
-                        d[k.rstrip(' ')] = v.replace('\'', ' ').strip()
+        # if the image path is given
+        if isinstance(image , str):
+            #if image.find("/") == -1:
+                #image = os.path.join(os.getcwd(),"images",image)
+            command.extend(["-f",image])
 
-        w = wcs.WCS(naxis=2)
-        w.wcs.crpix = [d['CRPIX1'], d['CRPIX2']]
-        w.wcs.crval = [d['CRVAL1'], d['CRVAL2']]
-        w.wcs.cdelt = [d['CDELT1'], d['CDELT2']]
-        w.wcs.crota = [d['CROTA1'], d['CROTA2']]
-        w.wcs.cd = [[d['CD1_1'], d['CD1_2']], [d['CD2_1'], d['CD2_2']]]
-        w.wcs.ctype = [d['CTYPE1'], d['CTYPE2']]
+        logger.debug("Command line : {}".format(command))
+        try:
+            output = subprocess.check_output(command , timeout=timeout).decode()
+        except TimeoutError:
+            return return_error("Solve timeout")
+        except subprocess.CalledProcessError as e:
+            return return_error("Command failed",{"error": e})
+        output_ = output.split("\n")
+        ra = None
+        dec = None
+        fov = None
+        for item in output_:
+            if item.find("Solution found:") != -1:
+                ra_dec = item.replace("Solution found: ","").replace("  "," ").replace(":","")
+                ra_h,ra_m,ra_s,dec_h,dec_m,dec_s = ra_dec.split(" ")
+                ra = ra_h + ":" + ra_m + ":" + ra_s
+                dec = dec_h + ":" + dec_m + ":" + dec_s
+            elif item.find("Set FOV=") != -1:
+                tmp = item[item.index("Set FOV=")+8::]
+                fov = tmp.split("d")[0]
+        if ra is None or dec is None:
+            return return_error("Solve failed")
         
-        output.close()
-        tmp.cleanup()
-        return wcs.utils.pixel_to_skycoord(image.size[0] // 2, image.size[1] // 2, w)
+        return return_success("Solve succeeded",{"ra": ra, "dec": dec,"fov":fov})
+    
+# A example:
+#print(AstapSolveAPI.solve("test.fits",ra=5.1,dec=88,fov=2.8))

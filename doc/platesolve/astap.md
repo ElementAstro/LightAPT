@@ -30,5 +30,7 @@ ASTAP is a free stacking and astrometric solver (plate solver) program for deep 
 
 Example:Depends on astap command line tool
 ```
-astap_cli -f apod2.jpg --ra 05:38:18 -z 0  -speed -spd -02:45:19 -wcs
+astap_cli -f test.jpg -ra 05.1 -z 0 -spd 88 -wcs -update -r 90 -fov 2.8
 ```
+
+AstapSolveAPI.solve(image, ra = None, dec = None, radius = None, fov = None, downsample = None, debug = False ,update = False , _wcs = True , timeout = 60)

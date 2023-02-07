@@ -40,10 +40,11 @@
 # 21-Jul-22 (rbd) 2.0.1 Resolve TODO reviews
 # -----------------------------------------------------------------------------
 
-from libs.alpyca.device import Device
-from libs.alpyca.telescope import GuideDirections
-from libs.alpyca.exceptions import *
-from libs.alpyca.docenum import DocIntEnum
+from _device import Device
+from _telescope import GuideDirections
+from _exceptions import *
+from _docenum import DocIntEnum
+
 from typing import List
 import requests
 import array
@@ -1478,7 +1479,7 @@ class Camera(Device):
         **Non-blocking**: See Notes, and :ref:`async_faq`
 
         Args:
-            Direction: :py:class:`~libs.alpyca.telescope.GuideDirections`
+            Direction: :py:class:`~_telescope.GuideDirections`
             Interval: duration of the guide move, milliseconds
 
         Raises:
@@ -1496,7 +1497,7 @@ class Camera(Device):
               around to checking it if the 'pulse' is short. This is still a success if you
               get False back and not an exception. See :ref:`async_faq`
             * Some cameras have implemented this as a Synchronous (blocking) operation.
-            * :py:class:`~libs.alpyca.telescope.GuideDirections` for North and South 
+            * :py:class:`~_telescope.GuideDirections` for North and South 
               have varying interpretations
               by German Equatorial mounts. Some GEM mounts interpret North to be 
               the same rotation direction of the declination axis regardless of 

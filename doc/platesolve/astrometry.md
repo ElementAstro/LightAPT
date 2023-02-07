@@ -153,4 +153,6 @@ Example:
 ```
 solve-field demo/apod2.jpg --overwrite --no-plots --scale-units degwidth --ra 05:38:18 --dec -02:45:19--radius 2 --no-verify --downsample 2 --depth 20,30,40 --scale-low 3.3 --scale-high 4.5 --width 800 --height 600
 ```
- This is the fastest way to solve a image , only cost a few seconds
+This is the fastest way to solve a image , only cost a few seconds
+
+solve(image : str , ra = None , dec = None , radius = None , downsample = None, depth = None , scale_low = None , scale_high = None , width = None , height = None,scale_units = None , overwrite = True , no_plot = True , verify = False,debug = False , timeout = 30 , resort = False , _continue = False , no_tweak = False)

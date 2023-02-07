@@ -36,7 +36,7 @@ from typing import Optional
 import pandas as pd
 import sqlite3
 
-from libs.pyongc.version import DBPATH
+from version import DBPATH
 
 COMMON_COLS = ['name', 'type', 'ra', 'dec', 'const', 'majax', 'minax', 'pa',
                'messier', 'ngc', 'ic', 'bmag', 'vmag', 'jmag', 'hmag', 'kmag', 'notngc',

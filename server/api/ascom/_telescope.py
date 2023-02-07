@@ -45,9 +45,10 @@
 from datetime import datetime
 from typing import List
 import dateutil.parser
-from libs.alpyca.docenum import DocIntEnum
-from libs.alpyca.device import Device
-from libs.alpyca.exceptions import NotImplementedException
+
+from _docenum import DocIntEnum
+from _device import Device
+from _exceptions import NotImplementedException
 
 class AlignmentModes(DocIntEnum):
     """The geometry of the mount"""
@@ -600,7 +601,7 @@ class Telescope(Device):
             * If the driver does not know whether the attached telescope does its 
               own refraction, and if the driver does not itself calculate refraction, 
               this property (if implemented) will raise 
-              :py:class:`~libs.alpyca.exceptions.DriverException` when read.
+              :py:class:`~_exceptions.DriverException` when read.
             * If the mount indicates that it can apply refraction, yet you wish to 
               calculate your own (more accurate) correction, try setting this to 
               False then, if successful, supply your own refracted coordinates.
@@ -1299,7 +1300,7 @@ class Telescope(Device):
         **Non-blocking**: See Notes, and :ref:`async_faq`
 
         Args:
-            Direction: :py:class:`~libs.alpyca.telescope.GuideDirections`
+            Direction: :py:class:`~_telescope.GuideDirections`
             Interval: duration of the guide move, milliseconds
 
         Raises:
@@ -1319,7 +1320,7 @@ class Telescope(Device):
               get False back and not an exception. See :ref:`async_faq`
             * Some mounts have implemented this as a Synchronous (blocking) operation. This
               is deprecated and will be prohbited in the future.
-            * :py:class:`~libs.alpyca.telescope.GuideDirections` for North and South 
+            * :py:class:`~_telescope.GuideDirections` for North and South 
               have varying interpretations
               by German Equatorial mounts. Some GEM mounts interpret North to be 
               the same rotation direction of the declination axis regardless of 
@@ -1345,7 +1346,7 @@ class Telescope(Device):
 
     def SlewToAltAz(self, Azimuth: float, Altitude: float) -> None:
         """DEPRECATED - Do not use this via Alpaca"""
-        raise NotImplementedException("Synchronous methods are deprecated, not available via libs.alpyca.")
+        raise NotImplementedException("Synchronous methods are deprecated, not available via _")
 
     def SlewToAltAzAsync(self, Azimuth: float, Altitude: float) -> None:
         """Start a slew to the given local horizontal coordinates. See Notes.
@@ -1382,7 +1383,7 @@ class Telescope(Device):
 
     def SlewToCoordinates(self, RightAscension: float, Declination: float) -> None:
         """DEPRECATED - Do not use this via Alpaca"""
-        raise NotImplementedException("Synchronous methods are deprecated, not available via libs.alpyca.")
+        raise NotImplementedException("Synchronous methods are deprecated, not available via _")
 
     def SlewToCoordinatesAsync(self, RightAscension: float, Declination: float):
         """Start a slew to the given equatorial coordinates. See Notes.
@@ -1421,7 +1422,7 @@ class Telescope(Device):
 
     def SlewToTarget(self) -> None:
         """DEPRECATED - Do not use this via Alpaca"""
-        raise NotImplementedException("Synchronous methods are deprecated, not available via libs.alpyca.")
+        raise NotImplementedException("Synchronous methods are deprecated, not available via _")
 
     def SlewToTargetAsync(self) -> None:
         """Start a slew to the coordinates in :py:attr:`TargetRightAscension` and 

@@ -44,8 +44,8 @@ import numpy as np
 import re
 import sqlite3
 
-from libs.pyongc.version import __version__ as version, DBDATE, DBPATH
-from libs.pyongc.exceptions import InvalidCoordinates, ObjectNotFound, UnknownIdentifier
+from version import __version__ as version, DBDATE, DBPATH
+from exceptions import InvalidCoordinates, ObjectNotFound, UnknownIdentifier
 
 PATTERNS = {'NGC|IC': r'^((?:NGC|IC)\s?)(\d{1,4})\s?((NED)(\d{1,2})|[A-Z]{1,2})?$',
             'Messier': r'^(M\s?)(\d{1,3})$',
