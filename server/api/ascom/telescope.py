@@ -21,12 +21,11 @@ Boston, MA 02110-1301, USA.
 from json import JSONDecodeError, dumps
 from os import getcwd, mkdir, path
 import re
-import socket
 from time import sleep
 
 from requests import exceptions
-from _telescope import Telescope,EquatorialCoordinateType, TelescopeAxes,DriveRates
-from _exceptions import (DriverException,
+from ._telescope import Telescope,EquatorialCoordinateType, TelescopeAxes,DriveRates
+from ._exceptions import (DriverException,
                                         ParkedException,
                                         SlavedException,
                                         NotConnectedException,

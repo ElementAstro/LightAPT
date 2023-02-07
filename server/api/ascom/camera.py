@@ -19,8 +19,8 @@ Boston, MA 02110-1301, USA.
 """
 
 from server.basic.camera import BasicCameraAPI,BasicCameraInfo
-from _camera import Camera,CameraStates,SensorType,ImageArrayElementTypes
-from _exceptions import (DriverException,
+from ._camera import Camera,CameraStates,SensorType,ImageArrayElementTypes
+from ._exceptions import (DriverException,
                                         NotConnectedException,
                                         NotImplementedException,
                                         InvalidValueException,

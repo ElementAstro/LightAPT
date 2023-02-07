@@ -40,10 +40,10 @@
 # 21-Jul-22 (rbd) 2.0.1 Resolve TODO reviews
 # -----------------------------------------------------------------------------
 
-from _device import Device
-from _telescope import GuideDirections
-from _exceptions import *
-from _docenum import DocIntEnum
+from ._device import Device
+from ._telescope import GuideDirections
+from ._exceptions import *
+from ._docenum import DocIntEnum
 
 from typing import List
 import requests

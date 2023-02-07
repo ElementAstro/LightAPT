@@ -24,8 +24,8 @@ from json import dumps
 from os import mkdir, path
 
 from server.basic.focuser import BasicFocuserAPI,BasicFocuserInfo
-from _focuser import Focuser
-from _exceptions import (DriverException,
+from ._focuser import Focuser
+from ._exceptions import (DriverException,
                                         NotConnectedException,
                                         NotImplementedException,
                                         InvalidValueException,

@@ -40,7 +40,7 @@
 # 21-Jul-22 (rbd) 2.0.1 Resolve TODO reviews
 # -----------------------------------------------------------------------------
 
-from _device import Device
+from ._device import Device
 
 class Focuser(Device):
     """ASCOM Standard IFocuserV3 Interface

@@ -24,8 +24,8 @@ from json import dumps
 from os import mkdir, path
 
 from server.basic.filterwheel import BasicFilterwheelAPI,BasicFilterwheelInfo
-from _filterwheel import FilterWheel
-from _exceptions import (DriverException,
+from ._filterwheel import FilterWheel
+from ._exceptions import (DriverException,
                                         NotConnectedException,
                                         InvalidValueException)
 

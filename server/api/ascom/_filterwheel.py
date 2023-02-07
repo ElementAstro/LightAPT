@@ -39,7 +39,7 @@
 # 13-May-22 (rbd) 2.0.0-dev1 Project now called "Alpyca" - no logic changes
 # -----------------------------------------------------------------------------
 
-from _device import Device
+from ._device import Device
 from typing import List
 
 class FilterWheel(Device):

@@ -46,9 +46,9 @@ from datetime import datetime
 from typing import List
 import dateutil.parser
 
-from _docenum import DocIntEnum
-from _device import Device
-from _exceptions import NotImplementedException
+from ._docenum import DocIntEnum
+from ._device import Device
+from ._exceptions import NotImplementedException
 
 class AlignmentModes(DocIntEnum):
     """The geometry of the mount"""
