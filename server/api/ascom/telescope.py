@@ -25,8 +25,8 @@ import socket
 from time import sleep
 
 from requests import exceptions
-from libs.alpyca.telescope import Telescope,EquatorialCoordinateType, TelescopeAxes,DriveRates
-from libs.alpyca.exceptions import (DriverException,
+from _telescope import Telescope,EquatorialCoordinateType, TelescopeAxes,DriveRates
+from _exceptions import (DriverException,
                                         ParkedException,
                                         SlavedException,
                                         NotConnectedException,
@@ -173,52 +173,6 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
         # Do not forget to set the status
         self.info._is_connected = True
         return return_success(_("Reconnected telescope successfully"),{"info": self.info.get_dict()})
-    
-    def scanning(self) -> dict:
-        """
-            Scanning the telescope one by one tcp connection
-            Args : None
-            Returns : dict
-                status : int # status of the disconnection
-                message : str # message of the disconnection
-                params : dict
-                    telescope : list # a list of telescope found
-        """
-        # Though this is a little bit strange that if a telescope had already connected,
-        # you can not scanning the other telescopes,this is because too many requests may make the server down
-        if self.info._is_connected or self.device is not None:
-            return return_error(_("Telescope has already connected"),{})
-        # Scanning is just try a few port the server probably running on , the most reliable port is 11111
-        telescope_list = []
-        for port in range(11111,11116):
-            # Trying to bind a socket port , if the port is already uesd it will cause socket.error
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                print(int(port))
-                ip = "127.0.0.1:{}".format(str(port))
-                s.bind(ip)
-                s.shutdown(2)
-            except socket.error:
-                logger.info(_("{}:{} may have a server listening on").format("127.0.0.1", port))
-                # Just try if backend of this port is ASCOM Remote Server
-                try:
-                    self.device = Telescope("127.0.0.1:"+port,0)
-                    self.device.Connected = True
-                    # Get the telescope's name
-                    telescope_list.append(self.device.Name)
-                    sleep(0.1)
-                    self.device.Connected = False
-                except DriverException as e:
-                    logger.error(_("Failed to connect to telescope : {}").format(e))
-                except exceptions.ConnectionError as e:
-                    logger.error(_("Network error while scanning to telescope : {}").format(e))
-        # If no telescope is found,just return an error and a empty list
-        if len(telescope_list) == 0:
-            return return_error(_("No telescope found"),{})
-        logger.info(_("Found {} telescope , list : {}").format(len(telescope_list),telescope_list))
-        return return_success(
-            _("Found {} telescope").format(len(telescope_list)),
-            {"telescope" : telescope_list})
 
     def polling(self) -> dict:
         """
@@ -234,8 +188,7 @@ class AscomTelescopeAPI(BasicTelescopeAPI):
         """
         if not self.info._is_connected or self.device is None:
             return return_error(_("Telescope is not connected"),{})
-        res = self.info.get_dict()
-        return return_success(_("Polling teleescope information"),{"info":res})
+        return return_success(_("Polling teleescope information"),{"info":self.info.get_dict()})
 
     def get_configration(self) -> dict:
         """
@@ -1087,18 +1040,6 @@ class WSAscomTelescope(object):
             return return_error(_("Telescope is not connected"))
 
         return self.device.reconnect()
-
-    async def scanning(self,params = {} , ws = None) -> dict:
-        """
-            Async scanning all of the devices available
-            Args : None
-            Returns : dict
-                list : list # a list of telescopes available
-        """
-        if self.device is not None:
-            return return_error(_("Telescope has already been connected"))
-
-        return self.device.scanning()
 
     async def polling(self,params = {} , ws = None) -> dict:
         """

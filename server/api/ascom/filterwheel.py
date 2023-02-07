@@ -24,8 +24,8 @@ from json import dumps
 from os import mkdir, path
 
 from server.basic.filterwheel import BasicFilterwheelAPI,BasicFilterwheelInfo
-from libs.alpyca.filterwheel import FilterWheel
-from libs.alpyca.exceptions import (DriverException,
+from _filterwheel import FilterWheel
+from _exceptions import (DriverException,
                                         NotConnectedException,
                                         InvalidValueException)
 
@@ -136,14 +136,6 @@ class AscomFilterwheelAPI(BasicFilterwheelAPI):
             return return_error(_("Network error"),{"error" : e})
         self.info._is_connected = True
         return return_success(_("Reconnect filterwheel successfully"),{"info" : self.info.get_dict()})
-
-    def scanning(self) -> dict:
-        """
-            Scan the filterwheel | 扫描电调
-            Args : None
-            Return : dict
-                filterwheel : list
-        """
 
     def polling(self) -> dict:
         """
@@ -334,8 +326,6 @@ class WSAscomFilterwheel(object):
             Args : None
             Returns : None
         """
-        self.device = None
-        self.ws = None
         self.thread = None
         self.device = AscomFilterwheelAPI()
 
@@ -354,16 +344,7 @@ class WSAscomFilterwheel(object):
         """
         return "LightAPT Ascom Filterwheel Websocket Wrapper Class"  
     
-    def init_ws(self , ws : tornado.websocket.WebSocketHandler) -> None:
-        """
-            Initialize the websocket into the class\n
-            Args:
-                ws : tornado.websocket.WebSocketHandler
-            Returns: None
-        """
-        self.ws = ws
-
-    async def connect(self , params = {}) -> None:
+    async def connect(self , params = {} , ws = None) -> None:
         """
             Async connect to the filterwheel 
             Args : 
@@ -385,7 +366,7 @@ class WSAscomFilterwheel(object):
         
         return self.device.connect(params=params)
 
-    async def disconnect(self,params = {}) -> dict:
+    async def disconnect(self,params = {} , ws = None) -> dict:
         """
             Async disconnect from the device
             Args : None
@@ -396,7 +377,7 @@ class WSAscomFilterwheel(object):
         
         return self.device.disconnect()
 
-    async def reconnect(self,params = {}) -> dict:
+    async def reconnect(self,params = {} , ws = None) -> dict:
         """
             Async reconnect to the device
             Args : None
@@ -409,19 +390,7 @@ class WSAscomFilterwheel(object):
 
         return self.device.reconnect()
 
-    async def scanning(self,params = {}) -> dict:
-        """
-            Async scanning all of the devices available
-            Args : None
-            Returns : dict
-                list : list # a list of filterwheels available
-        """
-        if self.device is not None:
-            return return_error(_("Filterwheel has already been connected"))
-
-        return self.device.scanning()
-
-    async def polling(self,params = {}) -> dict:
+    async def polling(self,params = {} , ws = None) -> dict:
         """
             Async polling method to get the newest filterwheel information
             Args : None

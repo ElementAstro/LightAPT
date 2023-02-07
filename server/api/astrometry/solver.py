@@ -74,17 +74,17 @@ class AstrometryOfflineSolver(object):
         if downsample is not None and isinstance(downsample,int):
             command.extend(["--downsample",str(downsample)])
         if depth is not None and isinstance(depth,list):
-            command.extend("--depth",str(depth).replace("[","").replace("]","").replace(" ",""))
+            command.extend(["--depth",str(depth).replace("[","").replace("]","").replace(" ","")])
         if scale_low is not None and isinstance(scale_low,float):
-            command.extend("--scale-low",str(scale_low))
+            command.extend(["--scale-low",str(scale_low)])
         if scale_high is not None and isinstance(scale_high,float):
-            command.extend("--scale-high",str(scale_high))
+            command.extend(["--scale-high",str(scale_high)])
         if width is not None and isinstance(width,int):
-            command.extend("--width",str(width))
+            command.extend(["--width",str(width)])
         if height is not None and isinstance(height,int):
-            command.extend("--height",str(height))
+            command.extend(["--height",str(height)])
         if scale_units is not None and isinstance(scale_units,str):
-            command.extend("--scale_units",scale_units)
+            command.extend(["--scale_units",scale_units])
         if overwrite == True:
             command.append("--overwrite")
         if no_plot == True:

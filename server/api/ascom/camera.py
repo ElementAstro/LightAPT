@@ -19,8 +19,8 @@ Boston, MA 02110-1301, USA.
 """
 
 from server.basic.camera import BasicCameraAPI,BasicCameraInfo
-from libs.alpyca.camera import Camera,CameraStates,SensorType,ImageArrayElementTypes
-from libs.alpyca.exceptions import (DriverException,
+from _camera import Camera,CameraStates,SensorType,ImageArrayElementTypes
+from _exceptions import (DriverException,
                                         NotConnectedException,
                                         NotImplementedException,
                                         InvalidValueException,
@@ -176,19 +176,6 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(error.NetworkError.value.value,{"error" : e})
         self.info._is_connected = True
         return return_success(success.ReconnectSuccess.value,{})
-
-    def scanning(self) -> dict:
-        """
-            Scan ASCOM camera | 扫描ASCOM相机
-            Args: None
-            Return : dict
-                camera : list
-        """
-        if self.device is not None and self.info._is_connected:
-            return return_warning(warning.DisconnectBeforeScanning.value,{"warning":warning.DisconnectBeforeScanning})
-        camera_list = []
-        logger.info(_("Scanning camera : {}").format(camera_list))
-        return return_success(success.ScanningSuccess.value,{"camera":camera_list})
 
     def polling(self) -> dict:
         """
@@ -556,10 +543,6 @@ class AscomCameraAPI(BasicCameraAPI):
             if self.info._can_save:
                 logger.debug(_("Start saving image data in fits"))
                 hdr = fits.Header()
-                hdr['COMMENT'] = 'FITS (Flexible Image Transport System) format defined in Astronomy and'
-                hdr['COMMENT'] = 'Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365.'
-                hdr['COMMENT'] = 'Contact the NASA Science Office of Standards and Technology for the'
-                hdr['COMMENT'] = 'FITS Definition document #100 and other FITS information.'
 
                 if self.info._depth == 16:
                     hdr['BZERO'] = 32768.0
@@ -1101,17 +1084,6 @@ class WSAscomCamera(object):
             return return_error(_("Camera is not connected , please do not execute reconnect command"))
 
         return self.device.reconnect()
-
-    async def scanning(self,params = {} , ws = None) -> dict:
-        """
-            Async scanning all of the devices available\n
-            Args : None
-            Returns : dict
-        """
-        if self.device is not None or self.device.info._is_connected:
-            return return_error(_("Camera had already been connected , please do not execute scanning command"))
-
-        return self.device.scanning()
 
     async def polling(self,params = {} , ws = None) -> dict:
         """

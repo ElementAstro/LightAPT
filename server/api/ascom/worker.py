@@ -22,10 +22,10 @@ import importlib
 import json
 import requests
 
-from .camera import WSAscomCamera
-from .telescope import WSAscomTelescope
-from .focuser import WSAscomFocuser
-from .filterwheel import WSAscomFilterwheel
+from camera import WSAscomCamera
+from telescope import WSAscomTelescope
+from focuser import WSAscomFocuser
+from filterwheel import WSAscomFilterwheel
 
 from utils.i18n import _
 from ...logging import logger , return_error

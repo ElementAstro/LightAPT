@@ -24,8 +24,8 @@ from json import dumps
 from os import mkdir, path
 
 from server.basic.focuser import BasicFocuserAPI,BasicFocuserInfo
-from libs.alpyca.focuser import Focuser
-from libs.alpyca.exceptions import (DriverException,
+from _focuser import Focuser
+from _exceptions import (DriverException,
                                         NotConnectedException,
                                         NotImplementedException,
                                         InvalidValueException,
@@ -133,14 +133,6 @@ class AscomFocuserAPI(BasicFocuserAPI):
             return return_error(_("Network error"),{"error" : e})
         self.info._is_connected = True
         return return_success(_("Reconnect focuser successfully"),{"info" : self.info.get_dict()})
-
-    def scanning(self) -> dict:
-        """
-            Scan the focuser | 扫描电调
-            Args: None
-            Return : dict
-                focuser : list
-        """
 
     def polling(self) -> dict:
         """
@@ -522,18 +514,6 @@ class WSAscomFocuser(object):
             return return_error(_("Focuser is not connected"))
 
         return self.device.reconnect()
-
-    async def scanning(self,params = {}) -> dict:
-        """
-            Async scanning all of the devices available
-            Args : None
-            Returns : dict
-                list : list # a list of focusers available
-        """
-        if self.device is None:
-            return return_error(_("Focuser has already been connected"))
-
-        return self.device.scanning()
 
     async def polling(self,params = {}) -> dict:
         """
