@@ -27,9 +27,32 @@ import tornado.web
 import tornado.websocket
 import tornado.options
 import tornado.auth
+from tornado.options import options
+
+from .settings import check_encoding_setting, get_host_keys_settings, get_policy_setting, get_server_settings, get_ssl_context
 
 from utils.i18n import _
 from .logging import logger,return_error
+
+from .webserver import IndexHtml,ClientHtml,DesktopHtml,DebugHtml,WebSSHHtml
+from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml,TestHtml,DeviceHtml
+from .webserver import DesktopBrowserHtml,DesktopStoreHtml,DesktopSystemHtml
+from .webserver import LoginHandler , RegisterHandler , LockScreenHandler , LicenseHandler , ForgetPasswordHandler
+
+from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
+                        INDIFIFODeviceStartStop,INDIFIFOGetAllDevice,
+                        INDIServerConnect,INDIServerDisconnect,INDIServerIsConnected
+                        )
+
+from .webssh.handler import IndexHandler as webssh_index_handler
+from .webssh.handler import WsockHandler as webssh_wsock_handler
+
+import sys
+# Check if the system is windows , if true then change asyncio settings
+if sys.platform == 'win32' and sys.version_info.major == 3 and \
+        sys.version_info.minor >= 8:
+    import asyncio
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class MainWebsocketServer(tornado.websocket.WebSocketHandler):
     """
@@ -171,86 +194,17 @@ class MainWebsocketServer(tornado.websocket.WebSocketHandler):
             r.update(params)
         return r
     
-# #################################################################
-# Login Module
-# #################################################################
-
-from .webserver import BaseLoginHandler
-
-class LoginHandler(BaseLoginHandler):
-    """
-        Login handler
-    """
-    def get(self):
-        self.render("login.html")
-
-    def post(self):
-        self.set_secure_cookie("user", self.get_argument("username"))
-        self.redirect("/ndesktop")
-
-class RegisterHandler(tornado.web.RequestHandler):
-    """
-        Register handler for registration
-    """
-    def get(self):
-        self.render("register.html")
-
-    def post(self):
-        self.delete()
-
-class LicenseHandler(tornado.web.RequestHandler):
-    """
-        License handler
-    """
-    def get(self):
-        self.render("license.html")
-
-class ForgetPasswordHandler(tornado.web.RequestHandler):
-    """
-        Forget password handler
-    """
-    def get(self):
-        self.render("forget-password.html")
-
-class LockScreenHandler(tornado.web.RequestHandler):
-    """
-        Lock screen handler
-    """
-    def get(self):
-        self.render("lockscreen.html")
-
-class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,tornado.auth.GoogleOAuth2Mixin):
-    """
-        Google OAuth
-    """
-    async def get(self):
-        if self.get_argument('code', False):
-            user = await self.get_authenticated_user(
-            redirect_uri='https://lightapt.com/auth/google',
-            code=self.get_argument('code'))
-        # Save the user with e.g. set_secure_cookie
-        else:
-            await self.authorize_redirect(
-                redirect_uri='https://lightapt.com/auth/google',
-                client_id=self.settings['google_oauth']['key'],
-                scope=['profile', 'email'],
-                response_type='code',
-                extra_params={'approval_prompt': 'auto'})
-
-from .webserver import IndexHtml,ClientHtml,DesktopHtml,DebugHtml,WebSSHHtml
-from .webserver import NoVNCHtml,BugReportHtml,SkymapHtml,TestHtml,DeviceHtml
-from .webserver import DesktopBrowserHtml,DesktopStoreHtml,DesktopSystemHtml
-from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
-                        INDIFIFODeviceStartStop,INDIFIFOGetAllDevice,
-                        INDIServerConnect,INDIServerDisconnect,INDIServerIsConnected
-                        )
-
-def make_server() -> tornado.web.Application:
+def make_server(loop, options) -> tornado.web.Application:
     """
         Initialize the tornado websocket server
         Args : None
         Returns : tornado.web.Application
     """
+    try:
+        host_keys_settings = get_host_keys_settings(options)
+    except UserWarning:
+        pass
+    policy = get_policy_setting(options, host_keys_settings)
 
     return tornado.web.Application([
             (r"/", IndexHtml),
@@ -280,7 +234,11 @@ def make_server() -> tornado.web.Application:
             (r"/indi/get/all/devices/", INDIFIFOGetAllDevice),
             (r'/indi/server/connect/', INDIServerConnect),
             (r'/indi/server/disconnect/', INDIServerDisconnect),
-            (r'/indi/server/connected/',INDIServerIsConnected)
+            (r'/indi/server/connected/',INDIServerIsConnected),
+
+            (r'/webssh/',webssh_index_handler,dict(loop=loop, policy=policy,
+                                  host_keys_settings=host_keys_settings)),
+            (r'/webssh/ws',webssh_wsock_handler,dict(loop=loop))
         ],
         template_path=os.path.join(
             os.getcwd(),"client","templates"
@@ -293,7 +251,7 @@ def make_server() -> tornado.web.Application:
         cookie_secret = "lightapt",
         xsrf_cookies = True,
         autoreload = True
-    )
+    ) 
 
 async def run_server() -> None:
     """
@@ -302,8 +260,19 @@ async def run_server() -> None:
         Returns : None
         NOTE : There must use asyncio.run to execute
     """
-    wsserver = make_server()
-    wsserver.listen(port=8080,address="0.0.0.0")
+    # Get all of the available options
+    options.parse_command_line()
+    check_encoding_setting(options.encoding)
+    loop = tornado.ioloop.IOLoop.current()
+    wsserver = make_server(loop, options)
+    # Get the server safety options
+    server_settings = get_server_settings(options)
+    wsserver.listen(options.port,options.address,**server_settings)
+    # Get the SSL context options if available
+    ssl_ctx = get_ssl_context(options)
+    if ssl_ctx:
+        wsserver.listen(options.sslport, options.ssladdress, **server_settings)
+    logger.info("Started SSL server on %s:%d" % (options.address,options.port))
     shutdown = asyncio.Event()
     await shutdown.wait()
 

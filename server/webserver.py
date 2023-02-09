@@ -132,3 +132,75 @@ class TestHtml(tornado.web.RequestHandler):
 class DeviceHtml(tornado.web.RequestHandler):
     def get(self):
         self.render("device.html")
+
+class NotFoundHandler(tornado.web.ErrorHandler):
+
+    def initialize(self):
+        super(NotFoundHandler, self).initialize()
+
+    def prepare(self):
+        raise tornado.web.HTTPError(404)
+
+# #################################################################
+# Login Module
+# #################################################################
+
+class LoginHandler(BaseLoginHandler):
+    """
+        Login handler
+    """
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        self.set_secure_cookie("user", self.get_argument("username"))
+        self.redirect("/ndesktop")
+
+class RegisterHandler(tornado.web.RequestHandler):
+    """
+        Register handler for registration
+    """
+    def get(self):
+        self.render("register.html")
+
+    def post(self):
+        self.delete()
+
+class LicenseHandler(tornado.web.RequestHandler):
+    """
+        License handler
+    """
+    def get(self):
+        self.render("license.html")
+
+class ForgetPasswordHandler(tornado.web.RequestHandler):
+    """
+        Forget password handler
+    """
+    def get(self):
+        self.render("forget-password.html")
+
+class LockScreenHandler(tornado.web.RequestHandler):
+    """
+        Lock screen handler
+    """
+    def get(self):
+        self.render("lockscreen.html")
+
+class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,tornado.auth.GoogleOAuth2Mixin):
+    """
+        Google OAuth
+    """
+    async def get(self):
+        if self.get_argument('code', False):
+            user = await self.get_authenticated_user(
+            redirect_uri='https://lightapt.com/auth/google',
+            code=self.get_argument('code'))
+        # Save the user with e.g. set_secure_cookie
+        else:
+            await self.authorize_redirect(
+                redirect_uri='https://lightapt.com/auth/google',
+                client_id=self.settings['google_oauth']['key'],
+                scope=['profile', 'email'],
+                response_type='code',
+                extra_params={'approval_prompt': 'auto'})

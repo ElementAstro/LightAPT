@@ -23,7 +23,6 @@ from requests import exceptions
 from json import dumps
 from os import mkdir, path
 
-from server.basic.focuser import BasicFocuserAPI,BasicFocuserInfo
 from ._focuser import Focuser
 from ._exceptions import (DriverException,
                                         NotConnectedException,
@@ -32,12 +31,36 @@ from ._exceptions import (DriverException,
                                         InvalidOperationException)
 
 from utils.i18n import _
-from ...logging import logger ,return_error,return_success,return_warning
+from ...logging import ascom_logger as logger
+from ...logging import return_error,return_success,return_warning
 
-class AscomFocuserAPI(BasicFocuserAPI):
+class AscomFocuserAPI(object):
     """
         ASCOM Focuser API Interface
     """
+
+    _type = "" # type of the camera , must be given
+    _name : str # name of the camera
+    _id : int # id of the camera
+    _description : str
+    _timeout = 300
+    _configration = "" # path to the configuration file
+
+    _ipaddress : str # IP address only ASCOM and INDI
+    _api_version : str # API version only ASCOM and INDI
+
+    _current_position : int
+    _step_size : int # current step size
+    _temperature : float
+
+    _max_steps : int # Focuser true limit for steps
+    _max_increment : int # Max steps per move operation
+    
+    _is_connected = False
+    _is_moving = False
+    _is_compensation = False
+
+    _can_temperature = False
 
     def __init__(self) -> None:
         """
@@ -45,7 +68,6 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Args : None
             Return : None
         """
-        self.info = BasicFocuserInfo()
         self.device = None
 
     def __del__(self) -> None:
@@ -54,11 +76,47 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Args : None
             Return : None
         """
-        if self.info._is_connected:
+        if self._is_connected:
             self.disconnect()
 
     def __str__(self) -> str:
         return "LightAPT ASCOM Focuser API Interface"
+    
+    def get_dict(self) -> dict:
+        """
+            Return focuser information in a dictionary
+            Args: None
+            Return: dict
+        """
+        return {
+            "type": self._type,
+            "name": self._name,
+            "id": self._id,
+            "description": self._description,
+            "timeout": self._timeout,
+            "configration": self._configration,
+            "current" : {
+                "position" : self._current_position,
+                "step_size" : self._step_size,
+                "temperature" : self._temperature
+            },
+            "abilitiy" : {
+                "can_temperature" : self._can_temperature
+            },
+            "status" : {
+                "is_connected" : self._is_connected,
+                "is_moving" : self._is_moving
+            },
+            "properties" : {
+                "max_steps" : self._max_steps,
+                "max_increment" : self._max_increment
+            },
+            "network" : {
+                "ipaddress" : self._ipaddress,
+                "api_version" : self._api_version,
+            }
+        }
+
     
     def connect(self, params: dict) -> dict:
         """
@@ -71,8 +129,8 @@ class AscomFocuserAPI(BasicFocuserAPI):
                 info : BasicFocuserInfo object
         """
         # Check if the focuser had already been connected , if true just return the current status
-        if self.info._is_connected or self.device is not None:
-            return return_warning(_("Focuser is connected"),{"info":self.info.get_dict()})
+        if self._is_connected or self.device is not None:
+            return return_warning(_("Focuser is connected"),{"info":self.get_dict()})
         # Check if the parameters are correct
         host = params.get('host')
         port = params.get('port')
@@ -91,9 +149,9 @@ class AscomFocuserAPI(BasicFocuserAPI):
         res = self.get_configration()
         if res.get('status') != 0:
             return return_error(_(f"Failed tp load focuser configuration"),{})
-        self.info._is_connected = True
-        self.info._type = "ascom"
-        return return_success(_("Connect to focuser successfully"),{"info":self.info.get_dict()})
+        self._is_connected = True
+        self._type = "ascom"
+        return return_success(_("Connect to focuser successfully"),{"info":self.get_dict()})
 
     def disconnect(self) -> dict:
         """
@@ -102,7 +160,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
             NOTE : This function must be called before destory all server
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_warning(_("Focuser is not connected"),{})
         try:
             self.device.Connected = False
@@ -111,7 +169,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
         except exceptions.ConnectionError as e:
             return return_error(_(f"Network error"),{"error" : e})
         self.device = None
-        self.info._is_connected = False
+        self._is_connected = False
         return return_success(_("Disconnect from focuser successfully"),{})
 
     def reconnect(self) -> dict:
@@ -121,7 +179,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
                 info : BasicFocuserInfo object
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_("Focuser is not connected"),{}) 
         try:
             self.device.Connected = False
@@ -131,8 +189,8 @@ class AscomFocuserAPI(BasicFocuserAPI):
             return return_error(_("Failed to reconnect to device"),{"error" : e})
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error" : e})
-        self.info._is_connected = True
-        return return_success(_("Reconnect focuser successfully"),{"info" : self.info.get_dict()})
+        self._is_connected = True
+        return return_success(_("Reconnect focuser successfully"),{"info" : self.get_dict()})
 
     def polling(self) -> dict:
         """
@@ -141,9 +199,9 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
                 info : BasicFocuserInfo object
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_("Focuser is not connected"),{})
-        return return_success(_("Focuser's information is refreshed"),{"info":self.info.get_dict()})
+        return return_success(_("Focuser's information is refreshed"),{"info":self.get_dict()})
 
     def get_configration(self) -> dict:
         """
@@ -153,45 +211,45 @@ class AscomFocuserAPI(BasicFocuserAPI):
                 info : BasicFocuserInfo object
         """
         try:
-            self.info._name = self.device.Name
-            logger.debug(_("Focuser name : {}").format(self.info._name))
-            self.info._id = self.device._client_id
-            logger.debug(_("Focuser ID : {}").format(self.info._id))
-            self.info._description = self.device.Description
-            logger.debug(_("Focuser description : {}").format(self.info._description))
-            self.info._ipaddress = self.device.address
-            logger.debug(_("Focuser IP address : {}").format(self.info._ipaddress))
-            self.info._api_version = self.device.api_version
-            logger.debug(_("Focuser API version : {}").format(self.info._api_version))
+            self._name = self.device.Name
+            logger.debug(_("Focuser name : {}").format(self._name))
+            self._id = self.device._client_id
+            logger.debug(_("Focuser ID : {}").format(self._id))
+            self._description = self.device.Description
+            logger.debug(_("Focuser description : {}").format(self._description))
+            self._ipaddress = self.device.address
+            logger.debug(_("Focuser IP address : {}").format(self._ipaddress))
+            self._api_version = self.device.api_version
+            logger.debug(_("Focuser API version : {}").format(self._api_version))
 
             # Get infomation about the focuser temperature ability
-            self.info._can_temperature = self.device.TempCompAvailable
-            logger.debug(_("Can focuser get temperature: {}").format(self.info._can_temperature))
-            if self.info._can_temperature:
+            self._can_temperature = self.device.TempCompAvailable
+            logger.debug(_("Can focuser get temperature: {}").format(self._can_temperature))
+            if self._can_temperature:
                 try:
-                    self.info._temperature = self.device.Temperature
-                    logger.debug(_("Focuser current temperature : {}°C").format(self.info._temperature))
+                    self._temperature = self.device.Temperature
+                    logger.debug(_("Focuser current temperature : {}°C").format(self._temperature))
                 except NotImplementedException as e:
                     logger.error(_("Failed to get current temperature , error: {}").format(e))
-                    self.info._can_temperature = False
+                    self._can_temperature = False
             else:
-                self.info._temperature = -256
+                self._temperature = -256
 
             # Get the max step the focuser can move to , this is for focuser safety purposes
 
-            self.info._current_position = self.device.Position
-            logger.debug(_("Focuser Current Position: {}").format(self.info._current_position))
-            self.info._max_steps = self.device.MaxStep
-            logger.debug(_("Focuser Max Step : {}").format(self.info._max_steps))
-            self.info._max_increment = self.device.MaxIncrement
-            logger.debug(_("Focuser Max Increment : {}").format(self.info._max_increment))
+            self._current_position = self.device.Position
+            logger.debug(_("Focuser Current Position: {}").format(self._current_position))
+            self._max_steps = self.device.MaxStep
+            logger.debug(_("Focuser Max Step : {}").format(self._max_steps))
+            self._max_increment = self.device.MaxIncrement
+            logger.debug(_("Focuser Max Increment : {}").format(self._max_increment))
 
             # Get the current position of the focuser 
 
-            self.info._current_position = self.device.Position
-            logger.debug(_("Current Position : {}").format(self.info._current_position))
-            self.info._step_size = self.device.StepSize
-            logger.debug(_("Step Size : {}").format(self.info._step_size))
+            self._current_position = self.device.Position
+            logger.debug(_("Current Position : {}").format(self._current_position))
+            self._step_size = self.device.StepSize
+            logger.debug(_("Step Size : {}").format(self._step_size))
         
         except NotImplementedException as e:
             return return_error(_("Focuser is not supported"),{"error":e})
@@ -202,7 +260,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error":e})
 
-        return return_success(_("Get focuser configuration successfully"),{"info" : self.info.get_dict()})
+        return return_success(_("Get focuser configuration successfully"),{"info" : self.get_dict()})
 
     def set_configration(self, params: dict) -> dict:
         return super().set_configration(params)
@@ -217,14 +275,14 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
         """
         _p = path.join
-        _path = _p("config",_p("focuser",self.info._name+".json"))
+        _path = _p("config",_p("focuser",self._name+".json"))
         if not path.exists("config"):
             mkdir("config")
         if not path.exists(_p("config","focuser")):
             mkdir(_p("config","focuser"))
-        self.info._configration = _path
+        self._configration = _path
         with open(_path,mode="w+",encoding="utf-8") as file:
-            file.write(dumps(self.info.get_dict(),indent=4,ensure_ascii=False))
+            file.write(dumps(self.get_dict(),indent=4,ensure_ascii=False))
         return return_success(_("Save focuser information successfully"),{})
 
     def get_parameter(self, params : dict) -> dict:
@@ -258,16 +316,16 @@ class AscomFocuserAPI(BasicFocuserAPI):
                     position : int # position of the target
             Return : dict
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
-        if self.info._is_moving:
+        if self._is_moving:
             return return_warning(_("Focuser is moving"),{})
         
         position = params.get("position")
         if position is None:
             return return_error(_("Target position is required"),{})
         
-        if not isinstance(position,int) or not 0 <= position <= self.info._max_steps:
+        if not isinstance(position,int) or not 0 <= position <= self._max_steps:
             return return_error(_("Position is not a valid value"),{})
 
         try:
@@ -281,7 +339,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error: {}"),{"error":e})
 
-        self.info._is_moving = True
+        self._is_moving = True
         return return_success(_("Focuser started operation successfully"),{})
 
     def move_step(self, params: dict) -> dict:
@@ -292,10 +350,10 @@ class AscomFocuserAPI(BasicFocuserAPI):
                     step : int # step size
             Return : dict
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
 
-        if self.info._is_moving:
+        if self._is_moving:
             return return_error(_("Focuser is moving"),{})
 
         step = params.get("step")
@@ -303,11 +361,11 @@ class AscomFocuserAPI(BasicFocuserAPI):
         if step is None or not isinstance(step,int):
             return return_error(_("Step size is required , but now it is not available"),{})
 
-        if step > self.info._max_increment or not 0 <= self.info._current_position + step <= self.info._max_steps:
+        if step > self._max_increment or not 0 <= self._current_position + step <= self._max_steps:
             return return_error(_("Given step is out of range and may cause the focuser broken"),{})
 
         try:
-            self.device.Move(Position=self.info._current_position+step)
+            self.device.Move(Position=self._current_position+step)
         except InvalidValueException as e:
             return return_error(_("Invalid step value"),{"error":e})
         except InvalidOperationException as e:
@@ -319,7 +377,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error":e})
         
-        self.info._is_moving = True
+        self._is_moving = True
         return return_success(_("Focuser started move operation successfully"),{})
 
     def abort_move(self):
@@ -329,17 +387,17 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
                 position : int # current position after abort operation
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
         
-        if not self.info._is_moving:
+        if not self._is_moving:
             return return_error(_("Focuser is not moving"),{})
 
         try:
             self.device.Halt()
             sleep(0.5)
             if not self.device.IsMoving:
-                self.info._is_moving = False
+                self._is_moving = False
         except NotImplementedException as e:
             return return_error(_("Failed to abort focuser"),{"error":e})
         except NotConnectedException as e:
@@ -359,17 +417,17 @@ class AscomFocuserAPI(BasicFocuserAPI):
                 status : int # status of the operation
                 position : int # position of the current position
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
 
-        if not self.info._is_moving:
+        if not self._is_moving:
             return return_error(_("Focuser is not moving"),{})
 
         try:
             status = self.device.IsMoving
-            self.info._is_moving = status
+            self._is_moving = status
             position = self.device.Position
-            self.info._current_position = position
+            self._current_position = position
         except NotImplementedException as e:
             return return_error(_("Failed to get status of the operation"),{"error":e})
         except NotConnectedException as e:
@@ -390,28 +448,28 @@ class AscomFocuserAPI(BasicFocuserAPI):
             NOTE : This function needs focuser supported
         """
         # Check if the focuser is connected
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
 
-        if not self.info._can_temperature:
+        if not self._can_temperature:
             return return_error(_("Focuser is not supported to get temperature"))
 
         try:
-            self.info._temperature = self.device.Temperature
+            self._temperature = self.device.Temperature
         except NotImplementedException as e:
-            self.info._can_temperature = False
+            self._can_temperature = False
             return return_error(_("Focuser is not supported to get temperature"),{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(_("Focuser is not connected"),{"error":e})
         except DriverException as e:
             return return_error(_("Driver error"),{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(_("Network error"),{"error":e})
 
-        logger.debug(_("Current Focuser Temperature : {}").format(self.info._temperature))
+        logger.debug(_("Current Focuser Temperature : {}").format(self._temperature))
 
-        return return_success(_("Get focuser temperature successfully"),{"temperature":self.info._temperature})
+        return return_success(_("Get focuser temperature successfully"),{"temperature":self._temperature})
 
     def get_current_position(self) -> dict:
         """
@@ -420,7 +478,7 @@ class AscomFocuserAPI(BasicFocuserAPI):
             Return : dict
                 position : int
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_error(_("Focuser is not connected"),{})
 
         try:

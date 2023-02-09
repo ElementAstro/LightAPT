@@ -128,12 +128,12 @@ def main():
         logger.error(_("Invalid INDI web manager options : {}").format(str(e)))
     # Start the web server
     try:
-        from server.webssh.webssh import start_webssh
+        """from server.webssh.webssh import start_webssh
         from multiprocessing import Process
         # Start the webssh server
         _webssh_ = Process(target=start_webssh)
         _webssh_.daemon = True
-        _webssh_.start()
+        _webssh_.start()"""
         # Run main web server
         from server.wsapp import async_run_server
         async_run_server()

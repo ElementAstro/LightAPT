@@ -11,28 +11,23 @@ from concurrent.futures import ThreadPoolExecutor
 from tornado.ioloop import IOLoop
 from tornado.options import options
 from tornado.process import cpu_count
-from server.webssh.utils import (
+from ..webutils import (
     is_valid_ip_address, is_valid_port, is_valid_hostname, to_bytes, to_str,
     to_int, to_ip_address, UnicodeType, is_ip_hostname, is_same_primary_domain,
     is_valid_encoding
 )
-from server.webssh.worker import Worker, recycle_worker, clients
+from .worker import Worker, recycle_worker, clients
 
 from json.decoder import JSONDecodeError
 
 from urllib.parse import urlparse
 
-from ..logging import logger
+from ..logging import webssh_logger as logger
 
 DEFAULT_PORT = 22
 
 swallow_http_errors = True
 redirecting = None
-
-
-class InvalidValueError(Exception):
-    pass
-
 
 class SSHClient(paramiko.SSHClient):
 
@@ -115,7 +110,7 @@ class PrivateKey(object):
 
     def check_length(self):
         if len(self.privatekey) > self.max_length:
-            raise InvalidValueError('Invalid key length.')
+            logger.error("Invalid key length")
 
     def parse_name(self, iostr, tag_to_name):
         name = None
@@ -143,7 +138,8 @@ class PrivateKey(object):
         try:
             pkey = pkeycls.from_private_key(self.iostr, password=password)
         except paramiko.PasswordRequiredException:
-            raise InvalidValueError('Need a passphrase to decrypt the key.')
+            logger.error('Need a passphrase to decrypt the key.')
+            return
         except (paramiko.SSHException, ValueError) as exc:
             self.last_exception = exc
             logger.debug(str(exc))
@@ -154,7 +150,8 @@ class PrivateKey(object):
         logger.info('Parsing private key {!r}'.format(self.filename))
         name, length = self.parse_name(self.iostr, self.tag_to_name)
         if not name:
-            raise InvalidValueError('Invalid key {}.'.format(self.filename))
+            logger.error('Invalid key {}.'.format(self.filename))
+            return
 
         offset = self.iostr.tell() - length
         password = to_bytes(self.password) if self.password else None
@@ -174,7 +171,7 @@ class PrivateKey(object):
         if self.password:
             msg += ' or wrong passphrase "{}" for decrypting it.'.format(
                     self.password)
-        raise InvalidValueError(msg)
+        logger.error(msg)
 
 
 class MixinHandler(object):
@@ -266,7 +263,7 @@ class MixinHandler(object):
     def get_value(self, name):
         value = self.get_argument(name)
         if not value:
-            raise InvalidValueError('Missing value {}'.format(name))
+            logger.error('Missing value {}'.format(name))
         return value
 
     def get_context_addr(self):
@@ -316,7 +313,6 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         self.host_keys_settings = host_keys_settings
         self.ssh_client = self.get_ssh_client()
         self.debug = self.settings.get('debug', False)
-        self.font = self.settings.get('font', '')
         self.result = dict(id=None, status=None, encoding=None)
 
     def write_error(self, status_code, **kwargs):
@@ -358,7 +354,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
     def get_hostname(self):
         value = self.get_value('hostname')
         if not (is_valid_hostname(value) or is_valid_ip_address(value)):
-            raise InvalidValueError('Invalid hostname: {}'.format(value))
+            logger.error('Invalid hostname: {}'.format(value))
         return value
 
     def get_port(self):
@@ -368,7 +364,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
 
         port = to_int(value)
         if port is None or not is_valid_port(port):
-            raise InvalidValueError('Invalid port: {}'.format(value))
+            logger.error('Invalid port: {}'.format(value))
         return port
 
     def lookup_hostname(self, hostname, port):
@@ -482,7 +478,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         pass
 
     def get(self):
-        self.render('webssh.html', debug=self.debug, font=self.font)
+        self.render('webssh.html',debug=self.debug)
 
     @tornado.gen.coroutine
     def post(self):
@@ -497,10 +493,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
 
         self.check_origin()
 
-        try:
-            args = self.get_args()
-        except InvalidValueError as exc:
-            raise tornado.web.HTTPError(400, str(exc))
+        args = self.get_args()
 
         future = self.executor.submit(self.ssh_connect, args)
 
@@ -537,7 +530,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
 
         try:
             worker_id = self.get_value('id')
-        except (tornado.web.MissingArgumentError, InvalidValueError) as exc:
+        except (tornado.web.MissingArgumentError) as exc:
             self.close(reason=str(exc))
         else:
             worker = workers.get(worker_id)

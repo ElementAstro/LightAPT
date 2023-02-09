@@ -18,7 +18,6 @@ Boston, MA 02110-1301, USA.
 
 """
 
-from server.basic.camera import BasicCameraAPI,BasicCameraInfo
 from ._camera import Camera,CameraStates,SensorType,ImageArrayElementTypes
 from ._exceptions import (DriverException,
                                         NotConnectedException,
@@ -30,7 +29,8 @@ from .exception import AscomCameraSuccess as success
 from .exception import AscomCameraWarning as warning
 
 from utils.i18n import _
-from ...logging import logger,return_error,return_success,return_warning
+from ...logging import ascom_logger as logger
+from ...logging import return_error,return_success,return_warning
 
 from time import sleep
 from datetime import datetime
@@ -60,7 +60,7 @@ Sensor = {
     SensorType.RGGB : "rggb",
 }
 
-class AscomCameraAPI(BasicCameraAPI):
+class AscomCameraAPI(object):
     """
         Ascom Camera API for LightAPT server.
         Communication with ASCOM via Alpyca.
@@ -71,13 +71,82 @@ class AscomCameraAPI(BasicCameraAPI):
         https://github.com/ASCOMInitiative/ASCOMRemote
     """
 
+    _type = "" # type of the camera , must be given
+    _name : str # name of the camera
+    _id : int # id of the camera
+    _description : str
+    _timeout = 5
+    _configration = "" # path to the configuration file
+
+    _exposure = 0
+    _gain = 0
+    _offset = 0
+    _iso = 0
+    _binning = [1,1]
+    _temperature = -256
+    _cool_power = 0
+    _last_exposure = 0
+    _percent_complete = 0
+
+    _image_id = 0
+    _image_path = ""
+    _image_type = ""
+    _image_name_format = ""
+
+    _ipaddress : str # IP address only ASCOM and INDI
+    _api_version : str # API version only ASCOM and INDI
+
+    _can_binning = False
+    _can_cooling = False
+    _can_gain = False
+    _can_get_coolpower = False
+    _can_has_shutter = False
+    _can_iso = False
+    _can_offset = False
+    _can_save = True
+
+    _is_color = False
+    _is_connected = False
+    _is_cooling = False
+    _is_exposure = False
+    _is_imageready = False
+
+    _max_gain : int
+    _min_gain : int
+    _max_offset : int
+    _min_offset : int
+    _max_exposure : float
+    _min_exposure : float
+    _min_exposure_increment : float
+    _max_binning : list
+
+    _height : int
+    _width : int
+    _max_height : int
+    _min_height : int
+    _max_width : int
+    _min_width : int
+    _depth : int
+    _max_adu : int
+    _imgarray = False    # Now is just for ASCOM
+    _bayer_pattern : int
+    _bayer_offset_x : int
+    _bayer_offset_y : int
+    _pixel_height : float
+    _pixel_width : float
+    _start_x : int
+    _start_y : int
+    _subframe_x : int
+    _subframe_y : int
+    _sensor_type : str
+    _sensor_name : str
+
     def __init__(self) -> None:
         """
             Initialize the ASCOM Camera object
             Args : None
             Return : None
         """
-        self.info = BasicCameraInfo()
         self.device = None
 
     def __del__(self) -> None:
@@ -86,11 +155,86 @@ class AscomCameraAPI(BasicCameraAPI):
             Args : None
             Return : None
         """
-        if self.info._is_connected:
+        if self._is_connected:
             self.disconnect()
 
     def __str__(self) -> str:
         return "LightAPT Ascom API Interface via Alpyca"
+    
+    def get_dict(self) -> dict:
+        """
+            Return a dictionary containing camera information
+            Args : None
+            Return : dict
+        """
+        return {
+            "type": self._type,
+            "name": self._name,
+            "id": self._id,
+            "description": self._description,
+            "timeout": self._timeout,
+            "configration": self._configration,
+            "current" : {
+                "exposure": self._exposure,
+                "gain": self._gain,
+                "offset": self._offset,
+                "iso": self._iso,
+                "binning": self._binning,
+                "temperature": self._temperature,
+                "cool_power": self._cool_power,
+                "percent_complete": self._percent_complete,
+            },
+            "ability": {
+                "can_binning" : self._can_binning,
+                "can_cooling" : self._can_cooling,
+                "can_gain" : self._can_gain,
+                "can_get_coolpower" : self._can_get_coolpower,
+                "can_has_shutter" : self._can_has_shutter,
+                "can_iso" : self._can_iso,
+                "can_offset" : self._can_offset,
+            },
+            "status" : {
+                "is_connected" : self._is_connected,
+                "is_cooling" : self._is_cooling,
+                "is_exposure" : self._is_exposure,
+                "is_imageready" : self._is_imageready
+            },
+            "properties" : {
+                "max_gain" : self._max_gain,
+                "min_gain" : self._min_gain,
+                "max_offset" : self._max_offset,
+                "min_offset" : self._min_offset,
+                "max_exposure" : self._max_exposure,
+                "min_exposure" : self._min_exposure,
+                "max_binning" : self._max_binning,
+            },
+            "frame" : {
+                "height" : self._height,
+                "width" : self._width,
+                "max_height" : self._max_height,
+                "min_height" : self._min_height,
+                "max_width" : self._max_width,
+                "min_width" : self._min_width,
+                "depth" : self._depth if self._depth is not None else 0,
+                "max_adu" : self._max_adu,
+                "imgarray" : self._imgarray,
+                "bayer_pattern" : self._bayer_pattern,
+                "bayer_offset_x" : self._bayer_offset_x,
+                "bayer_offset_y" : self._bayer_offset_y,
+                "pixel_height" : self._pixel_height,
+                "pixel_width" : self._pixel_width,
+                "start_x" : self._start_x,
+                "start_y" : self._start_y,
+                "subframe_x" : self._subframe_x,
+                "subframe_y" : self._subframe_y,
+                "sensor_type" : self._sensor_type,
+                "sensor_name" : self._sensor_name,
+            },
+            "network" : {
+                "ipaddress" : self._ipaddress,
+                "api_version" : self._api_version,
+            }
+        }
 
     # #################################################################
     #
@@ -108,7 +252,7 @@ class AscomCameraAPI(BasicCameraAPI):
             Return  : dict
                 info : BasicCameraInfo object
         """
-        if self.info._is_connected:
+        if self._is_connected:
             return return_warning(_("Camera is connected"),{})
         if self.device is not None:
             logger.warning(error.OneDevice.value)
@@ -132,12 +276,12 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(_(f"Failed to connect to device on {host}:{port}"))
         except exceptions.ConnectionError as e:
             return return_error(_("Network error while connecting to camera"),{"error" : e})
-        self.info._is_connected = True
-        self.info._type = "ascom"
+        self._is_connected = True
+        self._type = "ascom"
         res = self.get_configration()
         if res.get('status') != 0:
             return return_error(_(f"Failed tp load camera configuration"),{})
-        return return_success(_("Connect to camera successfully"),{"info":self.info.get_dict()})
+        return return_success(_("Connect to camera successfully"),{"info":self.get_dict()})
 
     def disconnect(self) -> dict:
         """
@@ -146,7 +290,7 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
             NOTE : This function must be called before destory all server
         """
-        if not self.info._is_connected or self.device is None:
+        if not self._is_connected or self.device is None:
             return return_warning(_(error.NotConnected.value.value),{})
         try:
             self.device.Connected = False
@@ -155,7 +299,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value.value,{"error" : e})
         self.device = None
-        self.info._is_connected = False
+        self._is_connected = False
         return return_success(_("Disconnect from camera successfully"),{"params":None})
 
     def reconnect(self) -> dict:
@@ -164,7 +308,7 @@ class AscomCameraAPI(BasicCameraAPI):
             Args: None
             Return : dict
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_(error.NotConnected.value),{}) 
         try:
             self.device.Connected = False
@@ -174,7 +318,7 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(_(f"Failed to reconnect to device"),{"error" : e})
         except ConnectionError as e:
             return return_error(error.NetworkError.value.value,{"error" : e})
-        self.info._is_connected = True
+        self._is_connected = True
         return return_success(success.ReconnectSuccess.value,{})
 
     def polling(self) -> dict:
@@ -184,9 +328,9 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 info : BasicCameraInfo object
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_(error.NotConnected.value),{})
-        return return_success(success.PollingSuccess.value,{"info":self.info.get_dict()})
+        return return_success(success.PollingSuccess.value,{"info":self.get_dict()})
 
     def get_configration(self) -> dict:
         """
@@ -195,131 +339,131 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 info : BasicCameraInfo object
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_(error.NotConnected.value),{})
         try:
-            self.info._name = self.device.Name
-            logger.debug(_("Camera name : {}").format(self.info._name))
-            self.info._id = self.device._client_id
-            logger.debug(_("Camera ID : {}").format(self.info._id))
-            self.info._description = self.device.Description
-            logger.debug(_("Camera description : {}").format(self.info._description))
-            self.info._ipaddress = self.device.address
-            logger.debug(_("Camera IP address : {}").format(self.info._ipaddress))
-            self.info._api_version = self.device.api_version
-            logger.debug(_("Camera API version : {}").format(self.info._api_version))
+            self._name = self.device.Name
+            logger.debug(_("Camera name : {}").format(self._name))
+            self._id = self.device._client_id
+            logger.debug(_("Camera ID : {}").format(self._id))
+            self._description = self.device.Description
+            logger.debug(_("Camera description : {}").format(self._description))
+            self._ipaddress = self.device.address
+            logger.debug(_("Camera IP address : {}").format(self._ipaddress))
+            self._api_version = self.device.api_version
+            logger.debug(_("Camera API version : {}").format(self._api_version))
 
-            self.info._can_binning = self.device.CanAsymmetricBin
-            logger.debug(_("Can camera set binning mode : {}").format(self.info._can_binning))
-            self.info._binning = [self.device.BinX, self.device.BinY]
-            logger.debug(_("Camera current binning mode : {}").format(self.info._binning))
+            self._can_binning = self.device.CanAsymmetricBin
+            logger.debug(_("Can camera set binning mode : {}").format(self._can_binning))
+            self._binning = [self.device.BinX, self.device.BinY]
+            logger.debug(_("Camera current binning mode : {}").format(self._binning))
 
-            self.info._can_cooling = self.device.CanSetCCDTemperature
-            logger.debug(_("Can camera set cooling : {}").format(self.info._can_cooling))
-            self.info._can_get_coolpower = self.device.CanGetCoolerPower
-            logger.debug(_("Can camera get cooling power : {}").format(self.info._can_get_coolpower))
-            if self.info._can_cooling:
+            self._can_cooling = self.device.CanSetCCDTemperature
+            logger.debug(_("Can camera set cooling : {}").format(self._can_cooling))
+            self._can_get_coolpower = self.device.CanGetCoolerPower
+            logger.debug(_("Can camera get cooling power : {}").format(self._can_get_coolpower))
+            if self._can_cooling:
                 try:
-                    self.info._temperature = self.device.CCDTemperature
+                    self._temperature = self.device.CCDTemperature
                 except InvalidValueException as e:
                     logger.debug(error.CanNotGetTemperature)
-            if self.info._can_get_coolpower:
+            if self._can_get_coolpower:
                 try:
-                    self.info._cool_power = self.device.CoolerPower
+                    self._cool_power = self.device.CoolerPower
                 except InvalidValueException as e:
                     logger.debug(error.CanNotGetPower)
             try:
-                self.info._gain = self.device.Gain
-                logger.debug(_("Camera current gain : {}").format(self.info._gain))
-                self.info._max_gain = self.device.GainMax
-                logger.debug(_("Camera max gain : {}").format(self.info._max_gain))
-                self.info._min_gain = self.device.GainMin
-                logger.debug(_("Camera min gain : {}").format(self.info._min_gain))
-                self.info._can_gain = True
-                logger.debug(_("Can camera set gain : {}").format(self.info._can_gain))
+                self._gain = self.device.Gain
+                logger.debug(_("Camera current gain : {}").format(self._gain))
+                self._max_gain = self.device.GainMax
+                logger.debug(_("Camera max gain : {}").format(self._max_gain))
+                self._min_gain = self.device.GainMin
+                logger.debug(_("Camera min gain : {}").format(self._min_gain))
+                self._can_gain = True
+                logger.debug(_("Can camera set gain : {}").format(self._can_gain))
             except NotImplementedException:
-                self.info._max_gain = 0
-                self.info._min_gain = 0
-                self.info._can_gain = False
-                logger.debug(_("Can camera set gain : {}").format(self.info._can_gain))
+                self._max_gain = 0
+                self._min_gain = 0
+                self._can_gain = False
+                logger.debug(_("Can camera set gain : {}").format(self._can_gain))
             
-            self.info._can_guiding = self.device.CanPulseGuide
-            logger.debug(_("Can camera guiding : {}").format(self.info._can_guiding))
-            self.info._can_has_shutter = self.device.HasShutter
-            logger.debug(_("Can camera has shutter : {}").format(self.info._can_has_shutter))
-            self.info._can_iso = False
-            logger.debug(_("Can camera set iso : {}").format(self.info._can_iso))
+            self._can_guiding = self.device.CanPulseGuide
+            logger.debug(_("Can camera guiding : {}").format(self._can_guiding))
+            self._can_has_shutter = self.device.HasShutter
+            logger.debug(_("Can camera has shutter : {}").format(self._can_has_shutter))
+            self._can_iso = False
+            logger.debug(_("Can camera set iso : {}").format(self._can_iso))
             try:
-                self.info._offset = self.device.Offset
-                logger.debug(_("Camera current offset : {}").format(self.info._offset))
-                self.info._max_offset = self.device.OffsetMax
-                logger.debug(_("Camera max offset : {}").format(self.info._max_offset))
-                self.info._min_offset = self.device.OffsetMin
-                logger.debug(_("Camera min offset : {}").format(self.info._min_offset))
-                self.info._can_offset = True
-                logger.debug(_("Can camera set offset : {}").format(self.info._can_offset))
+                self._offset = self.device.Offset
+                logger.debug(_("Camera current offset : {}").format(self._offset))
+                self._max_offset = self.device.OffsetMax
+                logger.debug(_("Camera max offset : {}").format(self._max_offset))
+                self._min_offset = self.device.OffsetMin
+                logger.debug(_("Camera min offset : {}").format(self._min_offset))
+                self._can_offset = True
+                logger.debug(_("Can camera set offset : {}").format(self._can_offset))
             except InvalidOperationException:
-                self.info._max_offset = 0
-                self.info._min_offset = 0
-                self.info._can_offset = False
-                logger.debug(_("Can camera set offset : {}").format(self.info._can_offset))
+                self._max_offset = 0
+                self._min_offset = 0
+                self._can_offset = False
+                logger.debug(_("Can camera set offset : {}").format(self._can_offset))
 
-            self.info._is_cooling = self.device.CoolerOn
-            logger.debug(_("Is camera cooling : {}").format(self.info._is_cooling))
-            self.info._is_exposure = CameraState.get(self.device.CameraState)
-            logger.debug(_("Is camera exposure : {}").format(self.info._is_exposure))
+            self._is_cooling = self.device.CoolerOn
+            logger.debug(_("Is camera cooling : {}").format(self._is_cooling))
+            self._is_exposure = CameraState.get(self.device.CameraState)
+            logger.debug(_("Is camera exposure : {}").format(self._is_exposure))
 
-            self.info._is_imageready = self.device.ImageReady
-            logger.debug(_("Is camera image ready : {}").format(self.info._is_imageready))
+            self._is_imageready = self.device.ImageReady
+            logger.debug(_("Is camera image ready : {}").format(self._is_imageready))
 
-            self.info._max_exposure = self.device.ExposureMax
-            logger.debug(_("Camera max exposure : {}").format(self.info._max_exposure))
-            self.info._min_exposure = self.device.ExposureMin
-            logger.debug(_("Camera min exposure : {}").format(self.info._min_exposure))
-            self.info._min_exposure_increment = self.device.ExposureResolution
-            logger.debug(_("Camera min exposure increment : {}").format(self.info._min_exposure_increment))
-            self.info._max_binning = [self.device.MaxBinX,self.device.MaxBinY]
-            logger.debug(_("Camera max binning : {}").format(self.info._max_binning))
+            self._max_exposure = self.device.ExposureMax
+            logger.debug(_("Camera max exposure : {}").format(self._max_exposure))
+            self._min_exposure = self.device.ExposureMin
+            logger.debug(_("Camera min exposure : {}").format(self._min_exposure))
+            self._min_exposure_increment = self.device.ExposureResolution
+            logger.debug(_("Camera min exposure increment : {}").format(self._min_exposure_increment))
+            self._max_binning = [self.device.MaxBinX,self.device.MaxBinY]
+            logger.debug(_("Camera max binning : {}").format(self._max_binning))
 
-            self.info._height = self.device.CameraYSize
-            logger.debug(_("Camera frame height : {}").format(self.info._height))
-            self.info._width = self.device.CameraXSize
-            logger.debug(_("Camera frame width : {}").format(self.info._width))
-            self.info._max_height = self.info._height
-            self.info._max_width = self.info._width
-            self.info._min_height = self.info._height
-            self.info._min_width = self.info._width
-            self.info._depth = self.device.ImageArrayInfo
+            self._height = self.device.CameraYSize
+            logger.debug(_("Camera frame height : {}").format(self._height))
+            self._width = self.device.CameraXSize
+            logger.debug(_("Camera frame width : {}").format(self._width))
+            self._max_height = self._height
+            self._max_width = self._width
+            self._min_height = self._height
+            self._min_width = self._width
+            self._depth = self.device.ImageArrayInfo
             try:
-                self.info._bayer_offset_x = self.device.BayerOffsetX
-                logger.debug(_("Camera bayer offset x : {}").format(self.info._bayer_offset_x))
-                self.info._bayer_offset_y = self.device.BayerOffsetY
-                logger.debug(_("Camera bayer offset y : {}").format(self.info._bayer_offset_y))
-                self.info._bayer_pattern = 0
-                self.info._is_color = True
+                self._bayer_offset_x = self.device.BayerOffsetX
+                logger.debug(_("Camera bayer offset x : {}").format(self._bayer_offset_x))
+                self._bayer_offset_y = self.device.BayerOffsetY
+                logger.debug(_("Camera bayer offset y : {}").format(self._bayer_offset_y))
+                self._bayer_pattern = 0
+                self._is_color = True
             except NotImplementedException:
-                self.info._bayer_offset_x = 0
-                self.info._bayer_offset_y = 0
-                self.info._bayer_pattern = ""
-                self.info._is_color = False
-            self.info._pixel_height = self.device.PixelSizeY
-            logger.debug(_("Camera pixel height : {}").format(self.info._pixel_height))
-            self.info._pixel_width = self.device.PixelSizeX
-            logger.debug(_("Camera pixel width : {}").format(self.info._pixel_width))
-            self.info._max_adu = self.device.MaxADU
-            logger.debug(_("Camera max ADU : {}").format(self.info._max_adu))
-            self.info._start_x = self.device.StartX
-            logger.debug(_("Camera start x : {}").format(self.info._start_x))
-            self.info._start_y = self.device.StartY
-            logger.debug(_("Camera start y : {}").format(self.info._start_y))
-            self.info._subframe_x = self.device.NumX
-            logger.debug(_("Camera subframe x : {}").format(self.info._subframe_x))
-            self.info._subframe_y = self.device.NumY
-            logger.debug(_("Camera subframe y : {}").format(self.info._subframe_y))
-            self.info._sensor_name = self.device.SensorName
-            logger.debug(_("Camera sensor name : {}").format(self.info._sensor_name))
-            self.info._sensor_type = Sensor.get(self.device.SensorType)
-            logger.debug(_("Camera sensor type : {}").format(self.info._sensor_type))
+                self._bayer_offset_x = 0
+                self._bayer_offset_y = 0
+                self._bayer_pattern = ""
+                self._is_color = False
+            self._pixel_height = self.device.PixelSizeY
+            logger.debug(_("Camera pixel height : {}").format(self._pixel_height))
+            self._pixel_width = self.device.PixelSizeX
+            logger.debug(_("Camera pixel width : {}").format(self._pixel_width))
+            self._max_adu = self.device.MaxADU
+            logger.debug(_("Camera max ADU : {}").format(self._max_adu))
+            self._start_x = self.device.StartX
+            logger.debug(_("Camera start x : {}").format(self._start_x))
+            self._start_y = self.device.StartY
+            logger.debug(_("Camera start y : {}").format(self._start_y))
+            self._subframe_x = self.device.NumX
+            logger.debug(_("Camera subframe x : {}").format(self._subframe_x))
+            self._subframe_y = self.device.NumY
+            logger.debug(_("Camera subframe y : {}").format(self._subframe_y))
+            self._sensor_name = self.device.SensorName
+            logger.debug(_("Camera sensor name : {}").format(self._sensor_name))
+            self._sensor_type = Sensor.get(self.device.SensorType)
+            logger.debug(_("Camera sensor type : {}").format(self._sensor_type))
 
         except NotConnectedException as e:
             return return_error(_(error.NotConnected.value,{}))
@@ -327,7 +471,7 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(_(error.DriverError.value,{"error" : e}))
         except ConnectionError as e:
             return return_error(error.NetworkError.value.value,{"error":e})
-        return return_success(success.GetConfigrationSuccess.value,{"info" : self.info.get_dict()})
+        return return_success(success.GetConfigrationSuccess.value,{"info" : self.get_dict()})
 
     def set_configration(self, params: dict) -> dict:
         return super().set_configration(params)
@@ -342,16 +486,16 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
         """
         _p = path.join
-        _path = _p(getcwd() , "config","camera",self.info._name+".json")
+        _path = _p(getcwd() , "config","camera",self._name+".json")
         if not path.exists("config"):
             mkdir("config")
         if not path.exists(_p("config","camera")):
             mkdir(_p("config","camera"))
-        self.info._configration = _path
+        self._configration = _path
         try:
             with open(_path,mode="w+",encoding="utf-8") as file:
                 try:
-                    file.write(dumps(self.info.get_dict(),indent=4,ensure_ascii=False))
+                    file.write(dumps(self.get_dict(),indent=4,ensure_ascii=False))
                 except JSONDecodeError as e:
                     return return_error(_("JSON decoder error , error : {}").format(e),{})
         except OSError as e:
@@ -389,13 +533,13 @@ class AscomCameraAPI(BasicCameraAPI):
             Returns : dict
             NOTE : This function is a non-blocking function
         """
-        if self.device is None or not self.info._is_connected:
+        if self.device is None or not self._is_connected:
             return return_warning(_(error.NotConnected.value),{})
 
         exposure = params.get("exposure")
         is_dark = params.get("is_dark")
 
-        if exposure is None or not self.info._min_exposure < exposure < self.info._max_exposure:
+        if exposure is None or not self._min_exposure < exposure < self._max_exposure:
             return return_error(error.InvalidExposureValue.value,{"error":exposure})
         
         if is_dark:
@@ -404,10 +548,10 @@ class AscomCameraAPI(BasicCameraAPI):
         logger.info(_("Start exposure ..."))
         try:
             self.device.StartExposure(exposure,is_dark)
-            self.info._is_exposure = True
+            self._is_exposure = True
             sleep(0.1)
             if not self.device.ImageReady and self.device.CameraState == CameraStates.cameraExposing:
-                self.info._last_exposure = exposure
+                self._last_exposure = exposure
             else:
                 return return_error(error.StartExposureError.value,{"error" : error.StartExposureError.value})
         except InvalidValueException as e:
@@ -430,9 +574,9 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
             NOTE : This function must be called if exposure is still in progress when shutdown server
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(_(error.NotConnected.value),{})
-        if not self.info._is_exposure:
+        if not self._is_exposure:
             return return_warning(_("Exposure not started"),{})
         try:
             self.device.StopExposure()
@@ -452,7 +596,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except exceptions.ConnectionError as e:
             return return_error(_("Network error while get camera configuration"),{"error":e})
         finally:
-            self.info._is_exposure = False
+            self._is_exposure = False
         
     def get_exposure_status(self) -> dict:
         """
@@ -461,14 +605,14 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 status : int
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._is_exposure:
+        if not self._is_exposure:
             return return_warning(_("Exposure not started"),{})
 
         try:
             status = CameraState.get(self.device.CameraState)
-            self.info._is_exposure = status == CameraStates.cameraExposing
+            self._is_exposure = status == CameraStates.cameraExposing
         except NotConnectedException as e:
             return return_error(_(error.NotConnected.value),{"error":e})
         except DriverException as e:
@@ -476,7 +620,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(_("Get camera exposure status successfully"),{"status":self.info._is_exposure})
+        return return_success(_("Get camera exposure status successfully"),{"status":self._is_exposure})
 
     def get_exposure_result(self) -> dict:
         """
@@ -487,9 +631,9 @@ class AscomCameraAPI(BasicCameraAPI):
                 info : image info
             NOTE : Format!
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if self.info._is_exposure:
+        if self._is_exposure:
             return return_error(_("Exposure is still in progress"),{"error": "Exposure is still in progress"})
         try:
             hist = None
@@ -497,40 +641,40 @@ class AscomCameraAPI(BasicCameraAPI):
             info = None
 
             used_time = 0
-            while not self.device.ImageReady and used_time <= self.info._timeout:
+            while not self.device.ImageReady and used_time <= self._timeout:
                 sleep(0.5)
                 used_time += 0.5
             imgdata = self.device.ImageArray
-            if self.info._depth is None:
+            if self._depth is None:
                 img_format = self.device.ImageArrayInfo
                 if img_format.ImageElementType == ImageArrayElementTypes.Int32:
-                    if self.info._max_adu <= 65535:
-                        self.info._depth = 16
+                    if self._max_adu <= 65535:
+                        self._depth = 16
                     else:
-                        self.info._depth = 32
+                        self._depth = 32
                 elif img_format.ImageElementType == ImageArrayElementTypes.Double:
-                    self.info._depth = 64
+                    self._depth = 64
                 if img_format.Rank == 2:
-                    self.info._imgarray = True
+                    self._imgarray = True
                 else:
-                    self.info._imgarray = False
-                logger.debug(_(f"Camera Image Array : {self.info._imgarray}"))
+                    self._imgarray = False
+                logger.debug(_(f"Camera Image Array : {self._imgarray}"))
             img = None
-            if self.info._depth == 16:
+            if self._depth == 16:
                 img = np.uint16
-            elif self.info._depth == 32:
+            elif self._depth == 32:
                 img = np.int32
             else:
                 img = np.float64
             
-            if self.info._imgarray:
+            if self._imgarray:
                 nda = np.array(imgdata, dtype=img).transpose()
             else:
                 nda = np.array(imgdata, dtype=img).transpose(2,1,0)
             # Create a histogram of the image
-            if self.info._depth == 16:
+            if self._depth == 16:
                 hist , bins= np.histogram(nda,bins=[i for i in range(1,256)])
-            elif self.info._depth == 32:
+            elif self._depth == 32:
                 hist, bins= np.histogram(nda,bins=[i for i in range(1,65536)])
             # Create a base64 encoded image
             bytesio = BytesIO()
@@ -538,27 +682,27 @@ class AscomCameraAPI(BasicCameraAPI):
             base64_encode_img = b64encode(bytesio.getvalue())
             # Create a image information dict
             info = {
-                "exposure" : self.info._last_exposure
+                "exposure" : self._last_exposure
             }
-            if self.info._can_save:
+            if self._can_save:
                 logger.debug(_("Start saving image data in fits"))
                 hdr = fits.Header()
 
-                if self.info._depth == 16:
+                if self._depth == 16:
                     hdr['BZERO'] = 32768.0
                     hdr['BSCALE'] = 1.0
-                hdr['EXPOSURE'] = self.info._last_exposure
+                hdr['EXPOSURE'] = self._last_exposure
                 hdr['TIME'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                hdr['BINX'] = self.info._binning[0]
-                hdr['BINY'] = self.info._binning[1]
-                hdr['INSTRUME'] = self.info._sensor_type
+                hdr['BINX'] = self._binning[0]
+                hdr['BINY'] = self._binning[1]
+                hdr['INSTRUME'] = self._sensor_type
 
-                if self.info._can_gain:
-                    hdr['GAIN'] = self.info._gain
-                if self.info._can_offset:
-                    hdr['OFFSET'] = self.info._offset
-                if self.info._can_iso:
-                    hdr['ISO'] = self.info._iso
+                if self._can_gain:
+                    hdr['GAIN'] = self._gain
+                if self._can_offset:
+                    hdr['OFFSET'] = self._offset
+                if self._can_iso:
+                    hdr['ISO'] = self._iso
 
                 hdr["SOFTWARE"] = "LightAPT ASCOM Client"
 
@@ -588,9 +732,9 @@ class AscomCameraAPI(BasicCameraAPI):
                     enable : bool
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_cooling:
+        if not self._can_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
 
         if params is None or not isinstance(params, dict):
@@ -602,17 +746,17 @@ class AscomCameraAPI(BasicCameraAPI):
         try:
             self.device.CoolerOn = enable
         except NotImplementedException as e:
-            self.info._can_cooling = False
+            self._can_cooling = False
             return return_error(error.CanNotCooling.value,{"error": e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error" : e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error": e})
 
-        self.info._is_cooling = True
+        self._is_cooling = True
 
         return return_success(_("Camera started cooling successfully"),{})
 
@@ -624,11 +768,11 @@ class AscomCameraAPI(BasicCameraAPI):
                     temperature : float
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_cooling:
+        if not self._can_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
-        if not self.info._is_cooling:
+        if not self._is_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
 
         if params is None or not isinstance(params, dict):
@@ -642,10 +786,10 @@ class AscomCameraAPI(BasicCameraAPI):
         except InvalidValueException as e:
             return return_error(error.InvalidTemperatureValue.value,{"error":e})
         except NotImplementedException as e:
-            self.info._can_cooling = False
+            self._can_cooling = False
             return return_error(error.CanNotCooling.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
@@ -661,30 +805,30 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 power : float
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_cooling:
+        if not self._can_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
-        if not self.info._can_get_coolpower:
+        if not self._can_get_coolpower:
             return return_error(error.CanNotGetCoolingPower.value,{"error": error.CanNotGetCoolingPower.value})
-        if not self.info._is_cooling:
+        if not self._is_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
 
         try:
-            self.info._cool_power = self.device.CoolerPower
+            self._cool_power = self.device.CoolerPower
         except NotImplementedException as e:
-            self.info._can_cooling = False
-            self.info._can_get_coolpower = False
+            self._can_cooling = False
+            self._can_get_coolpower = False
             return return_error(error.CanNotGetCoolingPower.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(success.GetCoolingPowerSuccess.value,{"power":self.info._cool_power})
+        return return_success(success.GetCoolingPowerSuccess.value,{"power":self._cool_power})
 
     def get_cooling_status(self, params: dict) -> dict:
         """
@@ -693,25 +837,25 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 status : bool # True if cooling
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_cooling:
+        if not self._can_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
         
         try:
-            self.info._is_cooling = self.device.CoolerOn
+            self._is_cooling = self.device.CoolerOn
         except NotImplementedException as e:
-            self.info._can_cooling = False
+            self._can_cooling = False
             return return_error(error.CanNotCooling.value,{"error": e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error": e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error": e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error": e})
 
-        return return_success(success.GetCoolingStatusSuccess.value,{"status" : self.info._is_cooling})
+        return return_success(success.GetCoolingStatusSuccess.value,{"status" : self._is_cooling})
 
     def get_current_temperature(self, params: dict) -> dict:
         """
@@ -720,29 +864,29 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 temperature : float
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_cooling:
+        if not self._can_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
-        if not self.info._is_cooling:
+        if not self._is_cooling:
             return return_error(error.CanNotCooling.value,{"error": error.CanNotCooling.value})
 
         try:
-            self.info._temperature = self.device.CCDTemperature
+            self._temperature = self.device.CCDTemperature
         except InvalidValueException as e:
             return return_error(error.CanNotGetTemperature.value,{"error":e})
         except NotImplementedException as e:
-            self.info._can_cooling = False
+            self._can_cooling = False
             return return_error(error.CanNotCooling.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
         
-        return return_success(success.GetCoolingTemperatureSuccess.value,{'temperature':self.info._temperature})
+        return return_success(success.GetCoolingTemperatureSuccess.value,{'temperature':self._temperature})
 
     # #################################################################
     # Camera Settings
@@ -759,16 +903,16 @@ class AscomCameraAPI(BasicCameraAPI):
                     start_x : int
                     start_y : int
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
 
         try:
-            self.info._height = self.device.NumY
-            self.info._width = self.device.NumY
-            self.info._start_x = self.device.StartX
-            self.info._start_y = self.device.StartY
+            self._height = self.device.NumY
+            self._width = self.device.NumY
+            self._start_x = self.device.StartX
+            self._start_y = self.device.StartY
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error": e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
@@ -776,10 +920,10 @@ class AscomCameraAPI(BasicCameraAPI):
             return return_error(error.NetworkError.value,{"error":e})
 
         return return_success(success.GetROISuccess.value,{
-            "height" : self.info._height,
-            "width" : self.info._width,
-            "start_x" : self.info._start_x,
-            "start_y" : self.info._start_y
+            "height" : self._height,
+            "width" : self._width,
+            "start_x" : self._start_x,
+            "start_y" : self._start_y
         })
 
     def set_camera_roi(self , params : dict) -> dict:
@@ -793,21 +937,21 @@ class AscomCameraAPI(BasicCameraAPI):
                     start_y : int
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
 
-        if self.info._max_height is None or self.info._max_width is None:
+        if self._max_height is None or self._max_width is None:
             self.get_camera_roi({})
 
-        height = params.get('height',self.info._max_height)
-        width = params.get('width',self.info._max_width)
+        height = params.get('height',self._max_height)
+        width = params.get('width',self._max_width)
         start_x = params.get('start_x',0)
         start_y = params.get('start_y',0)
 
-        if (not 0 < height <= self.info._max_height / self.info._binning[0] or 
-            not 0 < width <= self.info._max_width / self.info._binning[1] or 
-            not 0 <= start_x <= self.info._max_width or 
-            not 0 <= start_y <= self.info._max_height):
+        if (not 0 < height <= self._max_height / self._binning[0] or 
+            not 0 < width <= self._max_width / self._binning[1] or 
+            not 0 <= start_x <= self._max_width or 
+            not 0 <= start_y <= self._max_height):
             return return_error(error.InvalidROIValue.value,{"error" : error.InvalidROIValue.value})
 
         try:
@@ -816,7 +960,7 @@ class AscomCameraAPI(BasicCameraAPI):
             self.device.NumX = width
             self.device.NumY = height
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error": e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
@@ -832,25 +976,25 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 gain : int
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_gain:
+        if not self._can_gain:
             return return_error(error.CanNotGetGain.value,{"error": error.CanNotGetGain.value})
 
         try:
-            self.info._gain = self.device.Gain
+            self._gain = self.device.Gain
         except NotImplementedException as e:
-            self.info._can_gain = False
+            self._can_gain = False
             return return_error(error.CanNotGetGain.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(success.GetGainSuccess.value,{"gain":self.info._gain})
+        return return_success(success.GetGainSuccess.value,{"gain":self._gain})
 
 
     def set_gain(self , params : dict) -> dict:
@@ -861,13 +1005,13 @@ class AscomCameraAPI(BasicCameraAPI):
                     gain : int
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_gain:
+        if not self._can_gain:
             return return_error(error.CanNotGetGain.value,{"error": error.CanNotGetGain.value})
 
         gain = params.get('gain', None)
-        if gain is None or not 0 <= gain <= self.info._max_gain:
+        if gain is None or not 0 <= gain <= self._max_gain:
             return return_error(error.InvalidGainValue.value,{"error": error.InvalidGainValue.value})
         
         try:
@@ -875,10 +1019,10 @@ class AscomCameraAPI(BasicCameraAPI):
         except InvalidValueException as e:
             return return_error(error.InvalidGainValue.value,{"error":e})
         except NotImplementedException as e:
-            self.info._can_gain = False
+            self._can_gain = False
             return return_error(error.CanNotGetGain.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
@@ -894,25 +1038,25 @@ class AscomCameraAPI(BasicCameraAPI):
             Return : dict
                 offset : int
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_offset:
+        if not self._can_offset:
             return return_error(error.CanNotGetOffset.value,{"error": error.CanNotGetOffset.value})
 
         try:
-            self.info._offset = self.device.Offset
+            self._offset = self.device.Offset
         except NotImplementedException as e:
-            self.info._can_offset = False
+            self._can_offset = False
             return return_error(error.CanNotGetOffset.value,{"error": e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(success.GetOffsetSuccess.value,{"offset" : self.info._offset})
+        return return_success(success.GetOffsetSuccess.value,{"offset" : self._offset})
 
     def set_offset(self, params : dict) -> dict:
         """
@@ -922,13 +1066,13 @@ class AscomCameraAPI(BasicCameraAPI):
                     offset : int
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_offset:
+        if not self._can_offset:
             return return_error(error.CanNotSetOffset.value,{"error": error.CanNotSetOffset.value})
 
         offset = params.get('offset', None)
-        if offset is None or not 0 <= offset <= self.info._max_offset:
+        if offset is None or not 0 <= offset <= self._max_offset:
             return return_error(error.InvalidOffsetValue.value,{"error": error.InvalidOffsetValue.value})
         
         try:
@@ -936,10 +1080,10 @@ class AscomCameraAPI(BasicCameraAPI):
         except InvalidValueException as e:
             return return_error(error.InvalidOffsetValue.value,{"error":e})
         except NotImplementedException as e:
-            self.info._can_offset = False
+            self._can_offset = False
             return return_error(error.CanNotSetOffset.value,{"error": e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
@@ -955,22 +1099,22 @@ class AscomCameraAPI(BasicCameraAPI):
             Returns : dict
                 binning : list # [bin_x,bin_y]
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_binning:
+        if not self._can_binning:
             return return_error(error.CanNotGetBinning.value,{"error": error.CanNotSetGinning.value})
 
         try:
-            self.info._binning = [self.device.BinX,self.device.BinY]
+            self._binning = [self.device.BinX,self.device.BinY]
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})
         except exceptions.ConnectionError as e:
             return return_error(error.NetworkError.value,{"error":e})
 
-        return return_success(success.GetBinningSuccess.value,{"binning":self.info._binning})
+        return return_success(success.GetBinningSuccess.value,{"binning":self._binning})
 
     def set_binning(self , params = {}) -> dict:
         """
@@ -980,9 +1124,9 @@ class AscomCameraAPI(BasicCameraAPI):
                     binning : list # [bin_x,bin_y]
             Return : dict
         """
-        if not self.info._is_connected:
+        if not self._is_connected:
             return return_error(error.NotConnected.value,{"error": error.NotConnected.value})
-        if not self.info._can_binning:
+        if not self._can_binning:
             return return_error(error.CanNotGetBinning.value,{"error": error.CanNotSetGinning.value})
 
         binning = params.get('binning')
@@ -1000,7 +1144,7 @@ class AscomCameraAPI(BasicCameraAPI):
         except InvalidValueException as e:
             return return_error(error.InvalidBinningValue.value,{"error":e})
         except NotConnectedException as e:
-            self.info._is_connected = False
+            self._is_connected = False
             return return_error(error.NotConnected.value,{"error":e})
         except DriverException as e:
             return return_error(error.DriverError.value,{"error":e})

@@ -2,7 +2,7 @@ import os.path
 import threading
 import paramiko
 
-from ..logging import logger
+from ..logging import webssh_logger as logger
 
 def load_host_keys(path : str):
     if os.path.exists(path) and os.path.isfile(path):

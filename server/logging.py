@@ -22,18 +22,50 @@ import os
 import logging
 import time
 
-# Initialize logger object | 初始化日志对象 
-logger = logging.getLogger("LightAPT")
+# Initialize logger object
+logger = logging.getLogger("logger")
 
 # logger parameters | 控制台日志参数
-console_font = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+console_font = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handle = logging.StreamHandler()
 console_handle.setFormatter(console_font)
 
-# Output log into a file | 文件日志
-file_font = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# if the log folder is not exist, create it
 if not os.path.exists("./logs"):
     os.mkdir("./logs")
+
+# logger for astap
+astap_logger = logging.getLogger("logger")
+astap_logger.name = 'astap'
+astap_logger.setLevel(logging.DEBUG)
+f_astap_logger = logging.FileHandler("logs/astap.log")
+f_astap_logger.setFormatter(console_font)
+astap_logger.addHandler(f_astap_logger)
+# logger for astrometry
+astrometry_logger = logging.getLogger("logger")
+astrometry_logger.name = "astrometry"
+astrometry_logger.setLevel(logging.DEBUG)
+f_astrometry_logger = logging.FileHandler("logs/astrometry.log")
+f_astrometry_logger.setFormatter(console_font)
+astrometry_logger.addHandler(f_astrometry_logger)
+# logger for ascom devices
+ascom_logger = logging.getLogger("logger")
+ascom_logger.name = "ascom"
+ascom_logger.setLevel(logging.DEBUG)
+f_ascom_logger = logging.FileHandler("logs/ascom.log")
+f_ascom_logger.setFormatter(console_font)
+ascom_logger.addHandler(f_ascom_logger)
+# logger for webssh
+webssh_logger = logging.getLogger("logger")
+webssh_logger.name = "webssh"
+webssh_logger.setLevel(logging.DEBUG)
+f_webssh_logger = logging.FileHandler("logs/webssh.log")
+f_webssh_logger.setFormatter(console_font)
+webssh_logger.addHandler(f_webssh_logger)
+
+# Output log into a file | 文件日志
+file_font = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 file_handle = logging.FileHandler(filename=f"logs/{time.strftime('%Y-%m-%d#%H%M%S')}.log",encoding="utf-8",mode="w+")
 file_handle.setFormatter(file_font)
 

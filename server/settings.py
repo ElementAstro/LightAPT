@@ -1,30 +1,26 @@
-import logging
-import os.path
+import os
 import ssl
-import sys
-
 from tornado.options import define
-from server.webssh.policy import (
-    load_host_keys, get_policy_class, check_policy_setting
-)
-from server.webssh.utils import (
-    to_ip_address, parse_origin_from_url, is_valid_encoding
-)
 
-import server.config as c
-from ..logging import logger
+from .webutils import is_valid_encoding, parse_origin_from_url, to_ip_address
+from .webssh.policy import load_host_keys , get_policy_class , check_policy_setting
 
-define('address', default='', help='Listen address')
-define('port', type=int, default=8888,  help='Listen port')
-define('ssladdress', default='', help='SSL listen address')
+from .logging import webssh_logger as logger
+
+define('address', default='localhost', help='Listen address')
+define('port', type=int, default=8080,  help='Listen port')
+# SSL Mode support
+define('ssladdress', default='localhost', help='SSL listen address')
 define('sslport', type=int, default=4433,  help='SSL listen port')
 define('certfile', default='', help='SSL certificate file')
 define('keyfile', default='', help='SSL private key file')
-define('debug', type=bool, default=False, help='Debug mode')
+
 define('policy', default='warning',
        help='Missing host key policy, reject|autoadd|warning')
 define('hostfile', default='', help='User defined host keys file')
 define('syshostfile', default='', help='System wide host keys file')
+
+# Safety options
 define('tdstream', default='', help='Trusted downstream, separated by comma')
 define('redirect', type=bool, default=True, help='Redirecting http to https')
 define('fbidhttp', type=bool, default=True,
@@ -37,6 +33,7 @@ define('origin', default='same', help='''Origin policy,
 '<domains>': custom domains policy, matches any domain in the <domains> list
 separated by comma;
 '*': wildcard policy, matches any domain, allowed in debug mode only.''')
+       
 define('wpintvl', type=float, default=0, help='Websocket ping interval')
 define('timeout', type=float, default=3, help='SSH connection timeout')
 define('delay', type=float, default=3, help='The delay to call recycle_worker')
@@ -47,42 +44,41 @@ define('encoding', default='',
        help='''The default character encoding of ssh servers.
 Example: --encoding='utf-8' to solve the problem with some switches&routers''')
 
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-font_dirs = [os.getcwd(), 'client', 'static', 'font']
+# Debug Mode support
+define('debug', type=bool, default=False, help='Debug mode')
+define('autoreload', type=bool, default=False, help='Autoreload the resources')
+
 max_body_size = 1 * 1024 * 1024
 
-
-class Font(object):
-
-    def __init__(self, filename, dirs):
-        self.family = self.get_family(filename)
-        self.url = self.get_url(filename, dirs)
-
-    def get_family(self, filename):
-        return filename.split('.')[0]
-
-    def get_url(self, filename, dirs):
-        return '/'.join(dirs + [filename])
-
-
 def get_app_settings(options):
+    """
+        Get the settings of the tornado application
+        Args:
+            options : tornado.options.options
+        Returns: {
+            template_path : str # path to the template files
+            static_path : str # path to the static files
+            websocket_ping_interval : int
+            debug : bool # whether to enable debug mode
+            autoreload : bool # whether to enable autoreload the server
+            xsrf_cookies : cookie list
+            origin_policy : list
+        }
+    """
     settings = dict(
         template_path=os.path.join(os.getcwd(), 'client' ,'templates'),
         static_path=os.path.join(os.getcwd(), 'client' , 'static'),
         websocket_ping_interval=options.wpintvl,
         debug=options.debug,
+        autoreload = options.autoreload,
         xsrf_cookies=options.xsrf,
-        font=Font(
-            get_font_filename(options.font,
-                              os.path.join(base_dir, *font_dirs)),
-            font_dirs[1:]
-        ),
         origin_policy=get_origin_setting(options)
     )
     return settings
 
 
-def get_server_settings(options):
+def get_server_settings(options) -> dict:
+
     settings = dict(
         xheaders=options.xheaders,
         max_body_size=max_body_size,
@@ -90,10 +86,9 @@ def get_server_settings(options):
     )
     return settings
 
-
 def get_host_keys_settings(options):
     if not options.hostfile:
-        host_keys_filename = os.path.join(base_dir, 'known_hosts')
+        host_keys_filename = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'known_hosts')
     else:
         host_keys_filename = options.hostfile
     host_keys = load_host_keys(host_keys_filename)
@@ -170,21 +165,9 @@ def get_origin_setting(options):
 
     return origins
 
-
-def get_font_filename(font, font_dir):
-    filenames = {f for f in os.listdir(font_dir) if not f.startswith('.')
-                 and os.path.isfile(os.path.join(font_dir, f))}
-    if font:
-        if font not in filenames:
-            raise ValueError(
-                'Font file {!r} not found'.format(os.path.join(font_dir, font))
-            )
-    elif filenames:
-        font = filenames.pop()
-
-    return font
-
-
-def check_encoding_setting(encoding):
+def check_encoding_setting(encoding) -> None:
+    """
+        Check if the given encoding is supported . If not , just raise an exception
+    """
     if encoding and not is_valid_encoding(encoding):
         raise ValueError('Unknown character encoding {!r}.'.format(encoding))
