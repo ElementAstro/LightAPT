@@ -24,11 +24,12 @@ from pathlib import Path
 from ...logging import astap_logger as logger
 # import logger from predefined modules and use it directly
 
+# TODO : How to read the WCS file , maybe using astropy library?
 
 # one function can finish everything, no need to use class
 # static method is not used in this way
 async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None, debug=False, update=False,
-                      _wcs=True, timeout=60) -> dict:
+                    max_number_star = 500 , tolerance = 0.007 , _wcs=True, timeout=60) -> dict:
     """
         Solve the given image with the parameters\n
         Args:
@@ -86,6 +87,11 @@ async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None
         command.append('-update')
     if _wcs:
         command.append('-wcs')
+    
+    # Add a limit of the max number of stars
+    command.extend(['-s',str(max_number_star)])
+    # tolerance
+    command.extend(['-t',str(tolerance)])
 
     # no need to check type here
     command.extend(["-f", str(image)])
