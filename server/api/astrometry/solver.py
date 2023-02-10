@@ -111,7 +111,6 @@ async def solve(image : str , ra = None , dec = None , radius = None , downsampl
         command.append("--continue")
     if no_tweak == True:
         command.append("--no-tweak")
-    logger.debug("Command line : {}".format(command))
 
     command = ' '.join(command)  # change command as it is called by asyncio subprocess
     logger.debug(f"Command line : {command}")

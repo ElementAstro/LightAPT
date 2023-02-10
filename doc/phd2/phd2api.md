@@ -68,6 +68,13 @@ Returns: {
     "message" : str # the message of the operation , None if succeeded
 }
 ```
+reconnect_server()
+```
+Args : None
+Returns: {
+    "message" : str # the message of the operation , None if succeeded
+}
+```
 
 + get_proflies / get_current_profile / set_profile / generate_profile
 Due to the limitation of the interface provided by the server, we cannot directly provide the configuration file.

@@ -16,18 +16,12 @@ Boston, MA 02110-1301, USA.
 """
 
 import asyncio
+import os
 import traceback
-
 from pathlib import Path
-# logger uses origin version can meet all kinds of requirements.
-# your logger wrap broken the function return interface. makes function return not readable.
+
 from ...logging import astap_logger as logger
-# import logger from predefined modules and use it directly
 
-# TODO : How to read the WCS file , maybe using astropy library?
-
-# one function can finish everything, no need to use class
-# static method is not used in this way
 async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None, debug=False, update=False,
                     max_number_star = 500 , tolerance = 0.007 , _wcs=True, timeout=60) -> dict:
     """
@@ -49,6 +43,8 @@ async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None
             'dec': float
             'fov': float
             'message': None
+            'rota_x' : float
+            'rota_y' : float
         }
         if faced error, then message will not be none and display basic error message.
         if correctly executed, message will be none
@@ -58,6 +54,8 @@ async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None
         'dec': None,
         'fov': None,
         'message': None,
+        'rota_x' : None,
+        "rota_y" : None,
     }
     
     if image is None or not isinstance(image, (str, Path)):  # (, np.ndarray)
@@ -124,10 +122,22 @@ async def solve(image, ra=None, dec=None, radius=None, fov=None, downsample=None
     if ret_struct['ra'] is None or ret_struct['dec'] is None:
         ret_struct['message'] = 'Solve failed'
         return ret_struct
-
+    
+    if _wcs:
+        # Read the WCS File to get the rotation information
+        def cut(obj, sec):
+            return [obj[i:i+sec] for i in range(0,len(obj),sec)]
+        # Check if the wcs file is existing
+        wcs_path = image.name.split(".")[0] + ".wcs"
+        if not os.path.exists(wcs_path):
+            ret_struct['message'] = 'No wcs file found'
+            return ret_struct
+        with open(wcs_path,encoding="utf-8",mode="r") as f:
+            wcs = cut(f.read(),80)
+            for item in wcs:
+                if item.find("CROTA1  =  ") != -1:
+                    ret_struct['rota_x'] = item.split("/")[0].split("=")[1].replace(" ","")
+                if item.find("CROTA2  =  ") != -1:
+                    ret_struct['rota_y'] = item.split("/")[0].split("=")[1].replace(" ","")
+                    
     return ret_struct
-    # must tell exactly what you want to return. if you really want to wrap everything to log, use decorator sugar.
-    # instead of polluting the function return!
-
-# A example:
-#print(asyncio.run(astap_solve("test.fits",ra=5.1,dec=88,fov=2.8)))
