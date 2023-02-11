@@ -169,6 +169,23 @@ Stop calibration
 ```
 stop_calibration()
 ```
+Check whether the calibration had completed successfully
+```
+check_calibration()
+Args : None
+Returns : {
+    "status" : bool # true if calibrated successfully
+}
+```
+Get calibration data
+```
+get_calibration_data()
+Args : 
+    device : str # "AO" or "Mount"
+Returns : {
+    "data" : dict # the calibration data containing in a dictionary
+}
+```
 Clear calibration data
 ```
 clear_calibration_data()
@@ -188,7 +205,21 @@ Returns : {
 
 #### Guiding Interface
 
-+ start_guiding / stop_guiding / pause_guiding / resume_guiding
++ find_star / start_guiding / stop_guiding / pause_guiding / resume_guiding
+
+Automatically find a star
+```
+find_star()
+Args :
+    roi : [] # camera frame object
+Returns : {
+    "message" : str # None if succeeded
+    "x" : int # x position of the found star
+    "y" : int # y position of the found star
+}
+```
+
+Start guiding
 ```
 start_guiding()
 Args : {
@@ -225,7 +256,45 @@ Returns : {
     "message" : str # None if the operation is successful
 }
 ```
-
+Get the guiding algorithm.This is critical in some cases
+```
+get_guiding_algorithm()
+Args :
+    axis : str # name of the axis , "ra","x","dec", or "y"
+    name : str # optional , the name of the value to be returned
+Returns : {
+    "list" : list # a list of guide algorithm param names (strings)
+    "value" : float # the value of the named parameter
+}
+```
+Set the guiding mode of the specified axis , the name and value should be provided ,too.
+```
+set_guiding_algorithm()
+Args :
+    axis : str # "ra","x","dec", or "y"
+    name : str # the name of the parameter
+    value : float
+Returns : {
+    "message" : str # None if succeeded
+}
+```
+Get the guide star mode of DEC axis separately.
+```
+get_dec_guiding_mode()
+Args : None
+Returns : {
+    "mode" : str # "Off"/"Auto"/"North"/"South"
+}
+```
+Set the guiding star mode of DEC axis separately, but it cannot be used for some single-axis equatorial instruments
+```
+set_dec_guiding_mode()
+Args :
+    mode : str # "Off"/"Auto"/"North"/"South"
+Returns : {
+    "message" : str # None if succeeded
+}
+```
 ##### Dither
 Dithering is to eliminate the horizontal lines in the image. It should be dithered once after several pictures are taken. It is necessary to set the dithering range and stable conditions
 ```
@@ -239,6 +308,63 @@ Args : {
 }
 Returns : {
     "message" : str
+}
+```
+
+#### Camera
+
+Get and set camera parameters.
+
++ get_camera_frame_size / get_cooler_status / get_ccd_temperature / get_exposure / set_exposure
+
+Get the frame size of the camera
+```
+get_camera_frame_size()
+Args : None
+Returns : {
+    "height" : int # height of the camera frame
+    "width" : int # width of the camera frame
+}
+```
+
+Get the cooler status of the camera
+```
+get_cooler_status()
+Args : None
+Returns : {
+    "temperature": sensor temperature in degrees C (number), 
+    "coolerOn": boolean, 
+    "setpoint": cooler set-point temperature (number, degrees C), 
+    "power": cooler power (number, percent)
+}
+NOTE : This function needs camera supported
+```
+
+Get the current temperature of the camera
+```
+get_camera_temperature()
+Args : None
+Returns : {
+    "temperature" : float # sensor temperature in degrees C
+}
+```
+
+Get the exposure of the camera
+```
+get_exposure()
+Args : None
+Returns : {
+    "exposure" : float # in seconds
+}
+```
+
+Set the exposure value of the camera
+```
+set_exposure()
+Args :
+    exposure : float # in seconds
+Returns : {
+    "message" : str # None if succeeded
 }
 ```
 

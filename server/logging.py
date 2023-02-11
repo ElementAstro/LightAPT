@@ -44,6 +44,8 @@ def create_logger(name : str) -> logging.Logger:
 if not os.path.exists("./logs"):
     os.mkdir("./logs")
 
+# main logger
+logger = create_logger("main")
 # logger for astap
 astap_logger = create_logger("astap")
 # logger for astrometry
