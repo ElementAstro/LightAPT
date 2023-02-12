@@ -188,6 +188,13 @@ class PHD2ClientWorker(object):
         self._dither_dx = None
         self._dither_dy = None
 
+        self._exposure = None
+
+        self._is_cooling = False
+        self._target_temperature = None
+        self._current_temperature = None
+        self._coolig_power = None
+
         self._last_error = ""
 
         self.phd2_instance = None
@@ -486,82 +493,82 @@ class PHD2ClientWorker(object):
 
         for case in switch(event):
             if case("Version"):
-                await self._version(message)
+                await self.__version(message)
                 break
             if case("LockPositionSet"):
-                await self._lock_position_set(message)
+                await self.__lock_position_set(message)
                 break
             if case("Calibrating"):
-                await self._calibrating(message)
+                await self.__calibrating(message)
                 break
             if case("CalibrationComplete"):
-                await self._calibration_completed(message)
+                await self.__calibration_completed(message)
                 break
             if case("StarSelected"):
-                await self._star_selected(message)
+                await self.__star_selected(message)
                 break
             if case("StartGuiding"):
-                await self._start_guiding()
+                await self.__start_guiding()
                 break
             if case("Paused"):
-                await self._paused()
+                await self.__paused()
                 break
             if case("StartCalibration"):
-                await self._start_calibration(message)
+                await self.__start_calibration(message)
                 break
             if case("AppState"):
-                await self._app_state(message)
+                await self.__app_state(message)
                 break
             if case("CalibrationFailed"):
-                await self._calibration_failed(message)
+                await self.__calibration_failed(message)
                 break
             if case("CalibrationDataFlipped"):
-                await self._calibration_data_flipped(message)
+                await self.__calibration_data_flipped(message)
                 break
             if case("LockPositionShiftLimitReached"):
-                await self._lock_position_shift_limit_reached()
+                await self.__lock_position_shift_limit_reached()
                 break
             if case("LoopingExposures"):
-                await self._looping_exposures(message)
+                await self.__looping_exposures(message)
                 break
             if case("LoopingExposuresStopped"):
-                await self._looping_exposures_stopped()
+                await self.__looping_exposures_stopped()
                 break
             if case("SettleBegin"):
-                await self._settle_begin()
+                await self.__settle_begin()
                 break
             if case("Settling"):
-                await self._settling(message)
+                await self.__settling(message)
                 break
             if case("SettleDone"):
-                await self._settle_done(message)
+                await self.__settle_done(message)
                 break
             if case("StarLost"):
-                await self._star_lost(message)
+                await self.__star_lost(message)
                 break
             if case("GuidingStopped"):
-                await self._guiding_stopped()
+                await self.__guiding_stopped()
                 break
             if case("Resumed"):
-                await self._resumed()
+                await self.__resumed()
                 break
             if case("GuideStep"):
-                await self._guide_step(message)
+                await self.__guide_step(message)
                 break
             if case("GuidingDithered"):
-                await self._guiding_dithered(message)
+                await self.__guiding_dithered(message)
                 break
             if case("LockPositionLost"):
-                await self._lock_position_lost()
+                await self.__lock_position_lost()
                 break
             if case("Alert"):
-                await self._alert(message)
+                await self.__alert(message)
                 break
             if case("GuideParamChange"):
-                await self._guide_param_change(message)
+                await self.__guide_param_change(message)
                 break
             if case("ConfigurationChange"):
-                await self._configuration_change()
+                await self.__configuration_change()
                 break
             logger.error(f"Unknown event : {event}")
             break
@@ -813,6 +820,37 @@ class PHD2ClientWorker(object):
             /NoiseReductionMethod	1	0
         """
 
+    async def export_profile(self) -> dict:
+        """
+            Export the profile
+            Args : None
+            Returns : {
+                "message" : str
+            }
+        """
+        resp = {
+            "message" : None
+        }
+        
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
+            return resp
+
+        command = await self.generate_command("export_config_settings",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to export the profile"
+            resp["error"] = res.get("error")
+            return resp
+        
+        return resp
+
     # #################################################################
     # Device Connection
     # #################################################################
@@ -830,6 +868,10 @@ class PHD2ClientWorker(object):
         }
         if self._current_profile is None:
             resp["message"] = "no profile available"
+            return resp
+        
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
             return resp
 
         command = await self.generate_command("set_connected",True)
@@ -1230,7 +1272,7 @@ class PHD2ClientWorker(object):
     async def set_guiding_algorithm(self, axis : str , name : str , value : float) -> dict:
         """
             Set the algorithm of the specified axis
-            chat.forchange.cn
+            URL : chat.forchange.cn
             Args :
                 axis : str # "ra","x","dec", or "y"
                 name : str # the name of the parameter
@@ -1239,6 +1281,35 @@ class PHD2ClientWorker(object):
                 "message" : str # None if succeeded
             }
         """
+        resp = {
+            "message" : None,
+        }
+
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+        
+        if not isinstance(axis,str) or not axis in ["ra","x","dec","y"]:
+            resp["message"] = "Invalid axis specified"
+            return resp
+        if not isinstance(name,str) or not name in ["ra","x","dec","y"]:
+            resp["message"] = "Invalid axis specified"
+            return resp
+                
+        command = await self.generate_command("set_dec_guide_mode",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to set the guiding mode of the DEC axis"
+            resp["error"] = res.get("error")
+            return resp
+        
+        return resp
 
     async def get_dec_guiding_mode(self) -> dict:
         """
@@ -1248,6 +1319,31 @@ class PHD2ClientWorker(object):
                 "mode" : str # "Off"/"Auto"/"North"/"South"
             }
         """
+        resp = {
+            "message" : None,
+            "mode" : None
+        }
+
+        if not self._is_device_connected:
+            resp["message"] = "get_dec_guide_mode"
+            return resp
+                
+        command = await self.generate_command("get_dec_guide_mode",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get the guiding mode of the DEC axis"
+            resp["error"] = res.get("error")
+            return resp
+        
+        self._dec_guiding_mode = res.get("result")
+        resp["mode"] = self._dec_guiding_mode
+        return resp
 
     async def set_dec_guiding_mode(self, mode : str) -> dict:
         """
@@ -1258,6 +1354,32 @@ class PHD2ClientWorker(object):
                 "message" : str # None if succeeded
             }
         """
+        resp = {
+            "message" : None,
+        }
+
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+        
+        if not isinstance(mode,str) or not mode in ["Off","Auto","North","South"]:
+            resp["message"] = "Invalid mode specified"
+            return resp
+                
+        command = await self.generate_command("set_dec_guide_mode",{"mode" : mode})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to set the guiding mode of the DEC axis"
+            resp["error"] = res.get("error")
+            return resp
+        
+        return resp
 
     # #################################################################
     # Dither
@@ -1322,6 +1444,32 @@ class PHD2ClientWorker(object):
                 "width" : int # width of the camera frame
             }
         """
+        resp = {
+            "message" : None,
+            "height" : None,
+            "width" : None
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+                
+        command = await self.generate_command("get_camera_frame_size",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get frame size of the camemra"
+            resp["error"] = res.get("error")
+            return resp
+
+        self._frame_width , self._frame_height = res.get('result')
+        resp["height"] = self._frame_height
+        resp["width"] = self._frame_width
+        return resp
 
     async def get_cooler_status(self) -> dict:
         """
@@ -1335,6 +1483,39 @@ class PHD2ClientWorker(object):
             }
             NOTE : This function needs camera supported
         """
+        resp = {
+            "message" : None,
+            "temperature" : None,
+            "cooler_on" : None,
+            "setpoint" : None,
+            "power" : None,
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+                
+        command = await self.generate_command("get_cooler_status",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get cooling status of the camemra"
+            resp["error"] = res.get("error")
+            return resp
+
+        self._current_temperature = res.get('result').get("temperature")
+        self._is_cooling = res.get('result').get("coolerOn")
+        self._target_temperature = res.get('result').get("setpoint")
+        self._coolig_power = res.get('result').get("power")
+        resp["temperature"] = self._current_temperature
+        resp["cooler_on"] = self._is_cooling
+        resp["setpoint"] = self._target_temperature
+        resp["power"] = self._coolig_power
+        return resp
 
     async def get_camera_temperature(self) -> dict:
         """
@@ -1344,6 +1525,31 @@ class PHD2ClientWorker(object):
                 "temperature" : float # sensor temperature in degrees C
             }
         """
+        resp = {
+            "message" : None,
+            "temperature" : None
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+                
+        command = await self.generate_command("get_ccd_temperature",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get temperature of the camemra"
+            resp["error"] = res.get("error")
+            return resp
+
+        temperature = res.get('result').get("temperature")
+        self._current_temperature = temperature
+        resp["temperature"] = temperature
+        return resp
 
     async def get_exposure(self) -> dict:
         """
@@ -1353,6 +1559,31 @@ class PHD2ClientWorker(object):
                 "exposure" : float # in seconds
             }
         """
+        resp = {
+            "message" : None,
+            "exposure" : None
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+                
+        command = await self.generate_command("get_exposure",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get exposure of the camemra"
+            resp["error"] = res.get("error")
+            return resp
+
+        exposure = res.get('result') / 1000
+        self._exposure = exposure
+        resp["exposure"] = exposure
+        return resp
 
     async def set_exposure(self, exposure : float) -> dict:
         """
@@ -1363,6 +1594,33 @@ class PHD2ClientWorker(object):
                 "message" : str # None if succeeded
             }
         """
+        resp = {
+            "message" : None
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+        
+        if not isinstance(exposure , float) or not 0 < exposure < 30:
+            logger.error("Invalid exposure value specified")
+            resp["message"] = "Invalid exposure value specified"
+            return resp
+
+        command = await self.generate_command("set_exposure",{"exposure":int(exposure * 1000)})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to set exposure of the camemra"
+            resp["error"] = res.get("error")
+            return resp
+
+        self._exposure = exposure
+        return resp
 
     # #################################################################
     # Image
@@ -1382,8 +1640,12 @@ class PHD2ClientWorker(object):
         """
         resp = {
             "message" : None,
-            "image" : None
+            "image" : None,
+            "width" : None,
+            "height" : None,
+            "star_position" : None
         }
+
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
@@ -1395,11 +1657,14 @@ class PHD2ClientWorker(object):
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
+        
         if "error" in res:
             resp["message"] = "Failed to get the current image"
             resp["error"] = res.get('error')
             return resp
-        resp["image"] = res.get("result")
+        resp["height"] = res.get("height")
+        resp["width"] = res.get("width")
+        resp["star_position"] = res.get("star_position")
         return resp
 
     async def save_image(self) -> dict:
@@ -1412,10 +1677,159 @@ class PHD2ClientWorker(object):
         """
 
     # #################################################################
+    # Modified
+    # #################################################################
+
+    async def check_modified(self) -> dict:
+        """
+            Check if the PHD2 server been modified by LightAPT
+            Args : None
+            Returns : {
+                "status" : bool # true if the server was modified
+            }
+        """
+        resp = {
+            "message" : None,
+            "status" : None
+        }
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
+            return resp
+                
+        command = await self.generate_command("lightapt_modify_response",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to check if the server is modified"
+            resp["error"] = res.get("error")
+            return resp
+        
+        self._is_server_modified = res.get("result").get("modified")
+        resp["status"] = self._is_server_modified
+        return resp
+
+    async def get_darklib_path(self) -> dict:
+        """
+            Get the full path to the darklib directory
+            Args : None
+            Returns : {
+                "path" : str # the full path to the darklib directory
+            }
+        """
+        resp = {
+            "message" : None,
+            "path" : None
+        }
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
+            return resp
+                
+        command = await self.generate_command("get_darklib_path",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get the dark library path"
+            resp["error"] = res.get("error")
+            return resp
+        
+        self._darklib_path = res.get("result").get("path")
+        resp["path"] = self._darklib_path
+        return resp
+
+    async def get_darklib_name(self , profile_id : int) -> dict:
+        """
+            Get the name of the darklib profile for the given profile_id
+            Args :
+                profile_id : int
+            Returns : {
+                "name" : str # the name of the darklib
+            }
+        """
+
+    async def check_darklib_loaded(self) -> dict:
+        """
+            Check if the dark library is loaded
+            Args : None
+            Returns : {
+                "status" : bool # True if the dark library is loaded
+            }
+        """
+        resp = {
+            "message" : None,
+            "status" : None
+        }
+
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
+            return resp
+                
+        command = await self.generate_command("is_darklib_loaded",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get the dark library path"
+            resp["error"] = res.get("error")
+            return resp
+        
+        self._is_darklib_loaded = res.get("result").get("loaded")
+        resp["status"] = self._is_darklib_loaded
+        return resp
+
+    async def create_profile(self , name : str) -> dict:
+        """
+            Create a new profile
+            Args :
+                path : str # the full path to the profile
+            Returns : {
+                "message" : str # None if succeeded
+            }
+        """
+        resp = {
+            "message" : None,
+            "status" : None
+        }
+
+        if not self._is_server_connected:
+            resp["message"] = "Server is not connected"
+            return resp
+                
+        command = await self.generate_command("create_profile",{"name":name})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get the dark library path"
+            resp["error"] = res.get("error")
+            return resp
+        
+        resp["status"] = res.get("result").get("status")
+        
+        return resp
+
+    # #################################################################
     # Server Listener Functions
     # #################################################################
 
-    async def _version(self,message : dict) -> None:
+    async def __version(self,message : dict) -> None:
         """
             Get PHD2 version
             Args : None
@@ -1426,7 +1840,7 @@ class PHD2ClientWorker(object):
         self._subversion = message.get("PHDSubver")
         self._msgversion = message.get("MsgVersion")
 
-    async def _lock_position_set(self, message : dict) -> None:
+    async def __lock_position_set(self, message : dict) -> None:
         """
             Get lock position set
             Args:
@@ -1437,7 +1851,7 @@ class PHD2ClientWorker(object):
         self._star_position[1] = message.get("Y")
         self._is_star_locked = True
 
-    async def _calibrating(self,message : dict) -> None:
+    async def __calibrating(self,message : dict) -> None:
         """
             Get calibrating state
             Args:
@@ -1452,7 +1866,7 @@ class PHD2ClientWorker(object):
         self._calibrated_status["stop"] = message.get("step")
         self._calibrated_status["state"] = message.get("State")
 
-    async def _calibration_completed(self,message : dict) -> None:
+    async def __calibration_completed(self,message : dict) -> None:
         """
             Get calibration completed state
             Args:
@@ -1461,7 +1875,7 @@ class PHD2ClientWorker(object):
         """
         self._mount = message.get("Mount")
 
-    async def _star_selected(self,message : dict) -> None:
+    async def __star_selected(self,message : dict) -> None:
         """
             Get star selected state
             Args:
@@ -1472,7 +1886,7 @@ class PHD2ClientWorker(object):
         self._star_position[1] = message.get("Y")
         self._is_star_selected = True
     
-    async def _start_guiding(self) -> None:
+    async def __start_guiding(self) -> None:
         """
             Get start guiding state
             Args:
@@ -1481,7 +1895,7 @@ class PHD2ClientWorker(object):
         """
         self._is_guiding = True
 
-    async def _paused(self) -> None:
+    async def __paused(self) -> None:
         """
             Get paused state
             Args : None
@@ -1490,7 +1904,7 @@ class PHD2ClientWorker(object):
         self._is_guiding = False
         self._is_calibrating = False
 
-    async def _start_calibration(self, message : dict) -> None:
+    async def __start_calibration(self, message : dict) -> None:
         """
             Get start calibration state
             Args:
@@ -1501,7 +1915,7 @@ class PHD2ClientWorker(object):
         self._is_calibrating = True
         self._is_guiding = False
 
-    async def _app_state(self, message : dict) -> None:
+    async def __app_state(self, message : dict) -> None:
         """
             Get app state
             Args:
@@ -1543,7 +1957,7 @@ class PHD2ClientWorker(object):
                 self._is_looping = True
                 break
 
-    async def _calibration_failed(self, message : dict) -> None:
+    async def __calibration_failed(self, message : dict) -> None:
         """
             Get calibration failed state
             Args:
@@ -1554,7 +1968,7 @@ class PHD2ClientWorker(object):
         self._is_calibrating = False
         self._is_calibrated = False
 
-    async def _calibration_data_flipped(self, message : dict) -> None:
+    async def __calibration_data_flipped(self, message : dict) -> None:
         """
             Get calibration data flipping state
             Args:
@@ -1563,7 +1977,7 @@ class PHD2ClientWorker(object):
         """
         self._is_calibration_flipped = True
 
-    async def _lock_position_shift_limit_reached(self) -> None:
+    async def __lock_position_shift_limit_reached(self) -> None:
         """
             Get lock position shift limit reached state
             Args : None
@@ -1571,7 +1985,7 @@ class PHD2ClientWorker(object):
         """
         logger.warning("Star locked position reached the edge of the camera frame")
 
-    async def _looping_exposures(self, message : dict) -> None:
+    async def __looping_exposures(self, message : dict) -> None:
         """
             Get looping exposures state
             Args:
@@ -1580,7 +1994,7 @@ class PHD2ClientWorker(object):
         """
         self._is_looping = True
 
-    async def _looping_exposures_stopped(self) -> None:
+    async def __looping_exposures_stopped(self) -> None:
         """
             Get looping exposures stopped state
             Args : None
@@ -1588,7 +2002,7 @@ class PHD2ClientWorker(object):
         """
         self._is_looping = False
 
-    async def _settle_begin(self) -> None:
+    async def __settle_begin(self) -> None:
         """
             Get settle begin state
             Args : None
@@ -1596,7 +2010,7 @@ class PHD2ClientWorker(object):
         """
         self._is_settling = True
 
-    async def _settling(self , message : dict) -> None:
+    async def __settling(self , message : dict) -> None:
         """
             Get settling state
             Args:
@@ -1608,7 +2022,7 @@ class PHD2ClientWorker(object):
         self._settle_status["locked"] = message.get("StarLocked")
         self._is_settling = True
 
-    async def _settle_done(self, message : dict) -> None:
+    async def __settle_done(self, message : dict) -> None:
         """
             Get settle done state
             Args:
@@ -1625,7 +2039,7 @@ class PHD2ClientWorker(object):
             self._is_settled = False
         self._is_settling = False
 
-    async def _star_lost(self, message : dict) -> None:
+    async def __star_lost(self, message : dict) -> None:
         """
             Get star lost state
             Args:
@@ -1640,7 +2054,7 @@ class PHD2ClientWorker(object):
         self._is_guiding = False
         self._is_calibrating = False
 
-    async def _guiding_stopped(self) -> None:
+    async def __guiding_stopped(self) -> None:
         """
             Get guiding stopped state
             Args : None
@@ -1649,7 +2063,7 @@ class PHD2ClientWorker(object):
         self._is_guiding = False
         logger.info("Guiding Stopped")
 
-    async def _resumed(self) -> None:
+    async def __resumed(self) -> None:
         """
             Get guiding resumed state
             Args : None
@@ -1658,7 +2072,7 @@ class PHD2ClientWorker(object):
         logger.info("Guiding Resumed")
         self._is_guiding = True
 
-    async def _guide_step(self , message : dict) -> None:
+    async def __guide_step(self , message : dict) -> None:
         """
             Get guide step state
             Args:
@@ -1705,7 +2119,7 @@ class PHD2ClientWorker(object):
         self._guiding_status["hfd"] = message.get("HFD")
         logger.debug("Guide step HFD : {}".format(self._guiding_status["hfd"]))
         
-    async def _guiding_dithered(self, message : dict) -> None:
+    async def __guiding_dithered(self, message : dict) -> None:
         """
             Get guiding dithered state
             Args:
@@ -1715,7 +2129,7 @@ class PHD2ClientWorker(object):
         self._dither_dx = message.get("dx")
         self._dither_dy = message.get("dy")
 
-    async def _lock_position_lost(self) -> None:
+    async def __lock_position_lost(self) -> None:
         """
             Get lock position lost state
             Args : None
@@ -1724,7 +2138,7 @@ class PHD2ClientWorker(object):
         self._is_star_locked = True
         logger.error("Star Lock Position Lost")
 
-    async def _alert(self, message : dict) -> None:
+    async def __alert(self, message : dict) -> None:
         """
             Get alert state
             Args:
@@ -1734,7 +2148,7 @@ class PHD2ClientWorker(object):
         self._last_error = message.get('Msg')
         logger.error("Alert : {}".format(self._last_error))
 
-    async def _guide_param_change(self, message : dict) -> None:
+    async def __guide_param_change(self, message : dict) -> None:
         """
             Get guide param change state
             Args:
@@ -1742,7 +2156,7 @@ class PHD2ClientWorker(object):
             Returns : None
         """
     
-    async def _configuration_change(self) -> None:
+    async def __configuration_change(self) -> None:
         """
             Get configuration change state
             Args : None
