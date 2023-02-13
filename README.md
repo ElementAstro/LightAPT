@@ -1,8 +1,6 @@
 [![CodeQL](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/codeql.yml/badge.svg)](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/codeql.yml)
 [![CodeQL](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/codeql.yml/badge.svg)](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/codeql.yml)
 [![build docker image](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/docker-image.yml/badge.svg)](https://github.com/AstroAir-Develop-Team/lightapt/actions/workflows/docker-image.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AstroAir-Develop-Team_lightapt&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AstroAir-Develop-Team_lightapt)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=AstroAir-Develop-Team_lightapt&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=AstroAir-Develop-Team_lightapt)
 
 # LightAPT
 Light weight and Flexible Astro Photography Terminal based on Python and JavaScript
