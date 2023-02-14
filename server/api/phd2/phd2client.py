@@ -851,6 +851,47 @@ class PHD2ClientWorker(object):
         
         return resp
 
+    async def delete_profile(self , name : str) -> dict:
+        """
+            Delete the profile by name
+            Args :
+                name : str # the name of the profile
+            Returns : {
+                "message" : str # None if succeeded
+            }
+        """
+
+    async def delete_all_profiles(self) -> dict:
+        """
+            Delete all of the profiles on PHD2 server
+            Args : None
+            Returns : {
+                "message" : str 
+            }
+        """
+
+    async def copy_profile(self , name : str , dest : str) -> dict:
+        """
+            Copy a profile just like a backport
+            Args :
+                name : str # the name of the profile to copy
+                dest : str # the name of the copied file
+            Returns : {
+                "message" : str
+            }
+        """
+
+    async def rename_profile(self , name : str , newname : str) -> dict:
+        """
+            Rename a profile
+            Args :
+                name : str # the old name of the profile
+                newname : str # the new name of the profile
+            Returns : {
+                "message" : str
+            }
+        """
+
     # #################################################################
     # Device Connection
     # #################################################################
@@ -1774,6 +1815,52 @@ class PHD2ClientWorker(object):
             return resp
                 
         command = await self.generate_command("is_darklib_loaded",{})
+        try:
+            res = await self.send_command(command)
+        except socket.error as e:
+            resp["message"] = "Send command failed"
+            resp["error"] = e
+            return resp
+        
+        if "error" in res:
+            resp["message"] = "Failed to get the dark library path"
+            resp["error"] = res.get("error")
+            return resp
+        
+        self._is_darklib_loaded = res.get("result").get("loaded")
+        resp["status"] = self._is_darklib_loaded
+        return resp
+
+    async def create_darklib(self , name : str , max_exposure : float , min_exposure : float,
+                             count : int , rebuild : bool , continued : bool) -> dict:
+        """
+            Create the dark frame library
+            Args :
+                name : str # the name of the darklib to save
+                max_exposure : float # the max value of the exposure time
+                min_exposure : float # the min value of the exposure time
+                count : int # the number of the images
+                rebuild : bool # whether to rebuild the dark lib
+                continued : bool # whether to continue to improve the old lib
+            Returns : {
+                "message" : str # None if succeeded
+            }
+        """
+        resp = {
+            "message" : None
+        }
+        if not self._is_device_connected:
+            resp["message"] = "Device is not connected"
+            return resp
+        
+        command = await self.generate_command("create_darklib",{
+            "name" : name,
+            "max_exposure" : max_exposure * 1000,
+            "min_exposure" : min_exposure * 1000,
+            "count" : count,
+            "rebuild" : int(rebuild),
+            "continue" : int(continued)
+        })
         try:
             res = await self.send_command(command)
         except socket.error as e:
