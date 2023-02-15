@@ -37,8 +37,8 @@
  */
 
 #include "phd.h"
-#include "camera.h"
-#include "scope.h"
+#include "camera/camera.h"
+#include "telescope/scope.h"
 
 
 #if defined (INDI_CAMERA) || defined (GUIDE_INDI)

@@ -35,7 +35,7 @@
 
 #include "phd.h"
 #include "calreview_dialog.h"
-#include "scope.h"
+#include "telescope/scope.h"
 
 // Event handling for base class - derived classes handle their own bindings
 BEGIN_EVENT_TABLE( CalReviewDialog, wxDialog )

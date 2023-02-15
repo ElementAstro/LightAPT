@@ -172,15 +172,15 @@ include_directories(${phd_src_dir})
 set(cam_SRC
   #${phd_src_dir}/cam_altair.cpp
   #${phd_src_dir}/cam_altair.h
-  ${phd_src_dir}/cam_ascom.cpp
-  ${phd_src_dir}/cam_ascom.h
+  ${phd_src_dir}/camera/cam_ascom.cpp
+  ${phd_src_dir}/camera/cam_ascom.h
   #${phd_src_dir}/cam_atik16.cpp
   #${phd_src_dir}/cam_atik16.h
   #${phd_src_dir}/cam_firewire.h
   #${phd_src_dir}/cam_firewire_IC.cpp
   #${phd_src_dir}/cam_firewire_OSX.cpp
-  ${phd_src_dir}/cam_indi.cpp
-  ${phd_src_dir}/cam_indi.h
+  ${phd_src_dir}/camera/cam_indi.cpp
+  ${phd_src_dir}/camera/cam_indi.h
   #${phd_src_dir}/cam_INovaPLC.cpp
   #${phd_src_dir}/cam_INovaPLC.h
   #${phd_src_dir}/cam_ioptron.cpp
@@ -238,9 +238,9 @@ set(cam_SRC
   #${phd_src_dir}/cam_zwo.cpp
   #${phd_src_dir}/cam_zwo.h
 
-  ${phd_src_dir}/camera.cpp
-  ${phd_src_dir}/camera.h
-  ${phd_src_dir}/cameras.h
+  ${phd_src_dir}/camera/camera.cpp
+  ${phd_src_dir}/camera/camera.h
+  ${phd_src_dir}/camera/cameras.h
 )
 
 # windows specific cameras
@@ -275,35 +275,35 @@ endif()
 source_group(Cameras FILES ${cam_SRC})
 
 set(scopes_SRC
-  ${phd_src_dir}/mount.cpp
-  ${phd_src_dir}/mount.h
-  ${phd_src_dir}/scope.cpp
-  ${phd_src_dir}/scope.h
-  ${phd_src_dir}/scope_ascom.cpp
-  ${phd_src_dir}/scope_ascom.h
-  ${phd_src_dir}/scope_eqmac.cpp
-  ${phd_src_dir}/scope_eqmac.h
-  ${phd_src_dir}/scope_equinox.cpp
-  ${phd_src_dir}/scope_equinox.h
-  ${phd_src_dir}/scope_GC_USBST4.cpp
-  ${phd_src_dir}/scope_GC_USBST4.h
-  ${phd_src_dir}/scope_gpint.cpp
-  ${phd_src_dir}/scope_gpint.h
-  ${phd_src_dir}/scope_gpusb.cpp
-  ${phd_src_dir}/scope_gpusb.h
-  ${phd_src_dir}/scope_manual_pointing.cpp
-  ${phd_src_dir}/scope_manual_pointing.h
-  ${phd_src_dir}/scope_onboard_st4.cpp
-  ${phd_src_dir}/scope_onboard_st4.h
-  ${phd_src_dir}/scope_oncamera.cpp
-  ${phd_src_dir}/scope_oncamera.h
-  ${phd_src_dir}/scope_onstepguider.cpp
-  ${phd_src_dir}/scope_onstepguider.h
-  ${phd_src_dir}/scope_voyager.cpp
-  ${phd_src_dir}/scope_voyager.h
-  ${phd_src_dir}/scope_indi.h
-  ${phd_src_dir}/scope_indi.cpp
-  ${phd_src_dir}/scopes.h
+  ${phd_src_dir}/telescope/mount.cpp
+  ${phd_src_dir}/telescope/mount.h
+  ${phd_src_dir}/telescope/scope.cpp
+  ${phd_src_dir}/telescope/scope.h
+  ${phd_src_dir}/telescope/scope_ascom.cpp
+  ${phd_src_dir}/telescope/scope_ascom.h
+  ${phd_src_dir}/telescope/scope_eqmac.cpp
+  ${phd_src_dir}/telescope/scope_eqmac.h
+  ${phd_src_dir}/telescope/scope_equinox.cpp
+  ${phd_src_dir}/telescope/scope_equinox.h
+  ${phd_src_dir}/telescope/scope_GC_USBST4.cpp
+  ${phd_src_dir}/telescope/scope_GC_USBST4.h
+  ${phd_src_dir}/telescope/scope_gpint.cpp
+  ${phd_src_dir}/telescope/scope_gpint.h
+  ${phd_src_dir}/telescope/scope_gpusb.cpp
+  ${phd_src_dir}/telescope/scope_gpusb.h
+  ${phd_src_dir}/telescope/scope_manual_pointing.cpp
+  ${phd_src_dir}/telescope/scope_manual_pointing.h
+  ${phd_src_dir}/telescope/scope_onboard_st4.cpp
+  ${phd_src_dir}/telescope/scope_onboard_st4.h
+  ${phd_src_dir}/telescope/scope_oncamera.cpp
+  ${phd_src_dir}/telescope/scope_oncamera.h
+  ${phd_src_dir}/telescope/scope_onstepguider.cpp
+  ${phd_src_dir}/telescope/scope_onstepguider.h
+  ${phd_src_dir}/telescope/scope_voyager.cpp
+  ${phd_src_dir}/telescope/scope_voyager.h
+  ${phd_src_dir}/telescope/scope_indi.h
+  ${phd_src_dir}/telescope/scope_indi.cpp
+  ${phd_src_dir}/telescope/scopes.h
   ${phd_src_dir}/stepguider_sxao.cpp
   ${phd_src_dir}/stepguider_sxao.h
   ${phd_src_dir}/stepguider_sxao_indi.cpp
@@ -319,25 +319,25 @@ source_group(Scopes FILES ${scopes_SRC})
 set(guiding_SRC
   ${phd_src_dir}/backlash_comp.cpp
   ${phd_src_dir}/backlash_comp.h
-  ${phd_src_dir}/guide_algorithm_hysteresis.cpp
-  ${phd_src_dir}/guide_algorithm_hysteresis.h
-  ${phd_src_dir}/guide_algorithm_gaussian_process.cpp # MPI.IS PEC Guider: requires link to the GP target (contrib)
-  ${phd_src_dir}/guide_algorithm_gaussian_process.h
-  ${phd_src_dir}/guide_algorithm_identity.cpp
-  ${phd_src_dir}/guide_algorithm_identity.h
-  ${phd_src_dir}/guide_algorithm_lowpass.cpp
-  ${phd_src_dir}/guide_algorithm_lowpass.h
-  ${phd_src_dir}/guide_algorithm_lowpass2.cpp
-  ${phd_src_dir}/guide_algorithm_lowpass2.h
-  ${phd_src_dir}/guide_algorithm_resistswitch.cpp
-  ${phd_src_dir}/guide_algorithm_resistswitch.h
-  ${phd_src_dir}/guide_algorithm_zfilter.cpp
-  ${phd_src_dir}/guide_algorithm_zfilter.h
-  ${phd_src_dir}/guide_algorithm.cpp
-  ${phd_src_dir}/guide_algorithm.h
-  ${phd_src_dir}/guide_algorithms.h
-  ${phd_src_dir}/guider_multistar.cpp
-  ${phd_src_dir}/guider_multistar.h
+  ${phd_src_dir}/algorithm/guide_algorithm_hysteresis.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_hysteresis.h
+  ${phd_src_dir}/algorithm/guide_algorithm_gaussian_process.cpp # MPI.IS PEC Guider: requires link to the GP target (contrib)
+  ${phd_src_dir}/algorithm/guide_algorithm_gaussian_process.h
+  ${phd_src_dir}/algorithm/guide_algorithm_identity.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_identity.h
+  ${phd_src_dir}/algorithm/guide_algorithm_lowpass.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_lowpass.h
+  ${phd_src_dir}/algorithm/guide_algorithm_lowpass2.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_lowpass2.h
+  ${phd_src_dir}/algorithm/guide_algorithm_resistswitch.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_resistswitch.h
+  ${phd_src_dir}/algorithm/guide_algorithm_zfilter.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm_zfilter.h
+  ${phd_src_dir}/algorithm/guide_algorithm.cpp
+  ${phd_src_dir}/algorithm/guide_algorithm.h
+  ${phd_src_dir}/algorithm/guide_algorithms.h
+  ${phd_src_dir}/algorithm/guider_multistar.cpp
+  ${phd_src_dir}/algorithm/guider_multistar.h
   ${phd_src_dir}/guider.cpp
   ${phd_src_dir}/guider.h
   ${phd_src_dir}/guiders.h
@@ -350,20 +350,20 @@ source_group(Guiding FILES ${guiding_SRC})
 
 # it would ease if files are organised in an alphabetical order
 set(phd2_SRC
-  ${phd_src_dir}/about_dialog.cpp
-  ${phd_src_dir}/about_dialog.h
-  ${phd_src_dir}/advanced_dialog.cpp
-  ${phd_src_dir}/advanced_dialog.h
-  ${phd_src_dir}/aui_controls.cpp
-  ${phd_src_dir}/aui_controls.h
+  ${phd_src_dir}/gui/about_dialog.cpp
+  ${phd_src_dir}/gui/about_dialog.h
+  ${phd_src_dir}/gui/advanced_dialog.cpp
+  ${phd_src_dir}/gui/advanced_dialog.h
+  ${phd_src_dir}/gui/aui_controls.cpp
+  ${phd_src_dir}/gui/aui_controls.h
 
-  ${phd_src_dir}/calreview_dialog.cpp
-  ${phd_src_dir}/calreview_dialog.h
+  ${phd_src_dir}/gui/calreview_dialog.cpp
+  ${phd_src_dir}/gui/calreview_dialog.h
 
-  ${phd_src_dir}/calstep_dialog.cpp
-  ${phd_src_dir}/calstep_dialog.h
-  ${phd_src_dir}/camcal_import_dialog.cpp
-  ${phd_src_dir}/camcal_import_dialog.h
+  ${phd_src_dir}/gui/calstep_dialog.cpp
+  ${phd_src_dir}/gui/calstep_dialog.h
+  ${phd_src_dir}/camera/camcal_import_dialog.cpp
+  ${phd_src_dir}/camera/camcal_import_dialog.h
   ${phd_src_dir}/circbuf.h
 
   ${phd_src_dir}/comet_tool.cpp
@@ -371,12 +371,12 @@ set(phd2_SRC
 
   ${phd_src_dir}/config_indi.cpp
   ${phd_src_dir}/config_indi.h
-  ${phd_src_dir}/configdialog.cpp
-  ${phd_src_dir}/configdialog.h
-  ${phd_src_dir}/confirm_dialog.cpp
-  ${phd_src_dir}/confirm_dialog.h
-  ${phd_src_dir}/darks_dialog.cpp
-  ${phd_src_dir}/darks_dialog.h
+  ${phd_src_dir}/gui/configdialog.cpp
+  ${phd_src_dir}/gui/configdialog.h
+  ${phd_src_dir}/gui/confirm_dialog.cpp
+  ${phd_src_dir}/gui/confirm_dialog.h
+  ${phd_src_dir}/gui/darks_dialog.cpp
+  ${phd_src_dir}/gui/darks_dialog.h
   ${phd_src_dir}/debuglog.cpp
   ${phd_src_dir}/debuglog.h
   ${phd_src_dir}/drift_tool.cpp
@@ -388,8 +388,8 @@ set(phd2_SRC
   ${phd_src_dir}/fitsiowrap.cpp
   ${phd_src_dir}/fitsiowrap.h
 
-  ${phd_src_dir}/gear_dialog.cpp
-  ${phd_src_dir}/gear_dialog.h
+  ${phd_src_dir}/gui/gear_dialog.cpp
+  ${phd_src_dir}/gui/gear_dialog.h
   ${phd_src_dir}/gear_simulator.h
   ${phd_src_dir}/gear_simulator.cpp
   ${phd_src_dir}/graph-stepguider.cpp
@@ -414,13 +414,13 @@ set(phd2_SRC
   ${phd_src_dir}/logger.h
   ${phd_src_dir}/log_uploader.cpp
   ${phd_src_dir}/log_uploader.h
-  ${phd_src_dir}/manualcal_dialog.cpp
-  ${phd_src_dir}/manualcal_dialog.h
+  ${phd_src_dir}/gui/manualcal_dialog.cpp
+  ${phd_src_dir}/gui/manualcal_dialog.h
   ${phd_src_dir}/messagebox_proxy.cpp
   ${phd_src_dir}/messagebox_proxy.h
-  ${phd_src_dir}/myframe.cpp
-  ${phd_src_dir}/myframe.h
-  ${phd_src_dir}/myframe_events.cpp
+  ${phd_src_dir}/gui/myframe.cpp
+  ${phd_src_dir}/gui/myframe.h
+  ${phd_src_dir}/gui/myframe_events.cpp
   ${phd_src_dir}/nudge_lock.cpp
   ${phd_src_dir}/nudge_lock.h
   ${phd_src_dir}/onboard_st4.cpp
@@ -442,8 +442,8 @@ set(phd2_SRC
   ${phd_src_dir}/polardrift_tool.h
   ${phd_src_dir}/polardrift_toolwin.h
   ${phd_src_dir}/polardrift_toolwin.cpp
-  ${phd_src_dir}/profile_wizard.h
-  ${phd_src_dir}/profile_wizard.cpp
+  ${phd_src_dir}/gui/profile_wizard.h
+  ${phd_src_dir}/gui/profile_wizard.cpp
   ${phd_src_dir}/point.h
   ${phd_src_dir}/Refine_DefMap.cpp
   ${phd_src_dir}/Refine_DefMap.h
@@ -482,8 +482,8 @@ set(phd2_SRC
   ${phd_src_dir}/staticpa_tool.h
   ${phd_src_dir}/staticpa_toolwin.h
   ${phd_src_dir}/staticpa_toolwin.cpp
-  ${phd_src_dir}/statswindow.cpp
-  ${phd_src_dir}/statswindow.h
+  ${phd_src_dir}/gui/statswindow.cpp
+  ${phd_src_dir}/gui/statswindow.h
 
   ${phd_src_dir}/star.cpp
   ${phd_src_dir}/star.h

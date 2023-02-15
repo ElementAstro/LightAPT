@@ -36,7 +36,7 @@
 #ifndef MOUNT_H_INCLUDED
 #define MOUNT_H_INCLUDED
 
-#include "guide_algorithms.h"
+#include "algorithm/guide_algorithms.h"
 #include "image_math.h"
 #include "messagebox_proxy.h"
 

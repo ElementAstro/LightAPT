@@ -6,4 +6,5 @@ opencv-python
 paramiko
 psutil
 requests
+textual
 tornado

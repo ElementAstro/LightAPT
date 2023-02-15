@@ -43,7 +43,7 @@
 #define GUIDE_GAUSSIAN_PROCESS
 
 #include "guide_algorithm.h"
-#include "mount.h" // for PierSide
+#include "telescope/mount.h" // for PierSide
 
 #include <chrono>
 

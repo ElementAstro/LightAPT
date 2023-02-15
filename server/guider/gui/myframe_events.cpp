@@ -36,7 +36,7 @@
 
 #include "about_dialog.h"
 #include "aui_controls.h"
-#include "camcal_import_dialog.h"
+#include "camera/camcal_import_dialog.h"
 #include "darks_dialog.h"
 #include "image_math.h"
 #include "log_uploader.h"

@@ -38,7 +38,7 @@
 
 #ifdef SIMULATOR
 
-#include "camera.h"
+#include "camera/camera.h"
 #include "gear_simulator.h"
 #include "image_math.h"
 

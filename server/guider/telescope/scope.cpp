@@ -34,8 +34,8 @@
 #include "phd.h"
 
 #include "backlash_comp.h"
-#include "calreview_dialog.h"
-#include "calstep_dialog.h"
+#include "gui/calreview_dialog.h"
+#include "gui/calstep_dialog.h"
 #include "image_math.h"
 #include "socket_server.h"
 

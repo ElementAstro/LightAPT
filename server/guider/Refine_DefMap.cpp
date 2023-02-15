@@ -34,7 +34,7 @@
 
 #include "phd.h"
 #include "Refine_DefMap.h"
-#include "darks_dialog.h"
+#include "gui/darks_dialog.h"
 
 enum {
     ID_PREVIEW = 10001,
