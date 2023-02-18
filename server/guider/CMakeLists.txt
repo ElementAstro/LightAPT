@@ -73,16 +73,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Os")
 # Additional files in the workspace, To improve maintainability
 add_custom_target(CmakeAdditionalFiles
   SOURCES
-  ${phd_src_dir}/thirdparty/thirdparty.cmake
-  ${phd_src_dir}/cmake_modules/FindASCOM_INTERFACE.cmake
-  ${phd_src_dir}/cmake_modules/FindCFITSIO.cmake
-  ${phd_src_dir}/cmake_modules/FindINDI.cmake
-  ${phd_src_dir}/cmake_modules/FindNova.cmake
-  #${phd_src_dir}/cmake_modules/PHD2BuildDoc.cmake
-  #${phd_src_dir}/cmake_modules/PHD2GenerateDocScript.cmake
-  ${phd_src_dir}/cmake_modules/PHD2Removegettextwarning.cmake
-  ${phd_src_dir}/cmake_modules/compiler_options.cmake
-  ${phd_src_dir}/cmake_modules/PHD2Packaging.cmake)
+  ${phd_src_dir}/server/guider/thirdparty/thirdparty.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/FindASCOM_INTERFACE.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/FindCFITSIO.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/FindINDI.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/FindNova.cmake
+  #${phd_src_dir}/server/guider/cmake_modules/PHD2BuildDoc.cmake
+  #${phd_src_dir}/server/guider/cmake_modules/PHD2GenerateDocScript.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/PHD2Removegettextwarning.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/compiler_options.cmake
+  ${phd_src_dir}/server/guider/cmake_modules/PHD2Packaging.cmake)
 
 # compiler options
 include(cmake_modules/compiler_options.cmake)
@@ -156,8 +156,8 @@ include(thirdparty/thirdparty.cmake)
 # Global include directories
 # WxWidgets inclusion narrowed to PHD2 project only
 # include_directories(${wxWidgets_INCLUDE_DIRS})
-# include_directories(${phd_src_dir}/cameras/)
-include_directories(${phd_src_dir})
+# include_directories(${phd_src_dir}/server/guider/cameras/)
+include_directories(${phd_src_dir}/server/guider)
 
 
 
@@ -170,101 +170,101 @@ include_directories(${phd_src_dir})
 # endif()
 
 set(cam_SRC
-  #${phd_src_dir}/cam_altair.cpp
-  #${phd_src_dir}/cam_altair.h
-  ${phd_src_dir}/camera/cam_ascom.cpp
-  ${phd_src_dir}/camera/cam_ascom.h
-  #${phd_src_dir}/cam_atik16.cpp
-  #${phd_src_dir}/cam_atik16.h
-  #${phd_src_dir}/cam_firewire.h
-  #${phd_src_dir}/cam_firewire_IC.cpp
-  #${phd_src_dir}/cam_firewire_OSX.cpp
-  ${phd_src_dir}/camera/cam_indi.cpp
-  ${phd_src_dir}/camera/cam_indi.h
-  #${phd_src_dir}/cam_INovaPLC.cpp
-  #${phd_src_dir}/cam_INovaPLC.h
-  #${phd_src_dir}/cam_ioptron.cpp
-  #${phd_src_dir}/cam_ioptron.h
-  #${phd_src_dir}/cam_KWIQGuider.cpp
-  #${phd_src_dir}/cam_KWIQGuider.h
+  #${phd_src_dir}/server/guider/cam_altair.cpp
+  #${phd_src_dir}/server/guider/cam_altair.h
+  ${phd_src_dir}/server/guider/camera/cam_ascom.cpp
+  ${phd_src_dir}/server/guider/camera/cam_ascom.h
+  #${phd_src_dir}/server/guider/cam_atik16.cpp
+  #${phd_src_dir}/server/guider/cam_atik16.h
+  #${phd_src_dir}/server/guider/cam_firewire.h
+  #${phd_src_dir}/server/guider/cam_firewire_IC.cpp
+  #${phd_src_dir}/server/guider/cam_firewire_OSX.cpp
+  ${phd_src_dir}/server/guider/camera/cam_indi.cpp
+  ${phd_src_dir}/server/guider/camera/cam_indi.h
+  #${phd_src_dir}/server/guider/cam_INovaPLC.cpp
+  #${phd_src_dir}/server/guider/cam_INovaPLC.h
+  #${phd_src_dir}/server/guider/cam_ioptron.cpp
+  #${phd_src_dir}/server/guider/cam_ioptron.h
+  #${phd_src_dir}/server/guider/cam_KWIQGuider.cpp
+  #${phd_src_dir}/server/guider/cam_KWIQGuider.h
   #${KWIQGuider_PLATFORM_SRC}
-  #${phd_src_dir}/cam_LEwebcam.cpp
-  #${phd_src_dir}/cam_MeadeDSI.cpp
-  #${phd_src_dir}/cam_MeadeDSI.h
-  #${phd_src_dir}/cam_moravian.cpp
-  #${phd_src_dir}/cam_moravian.h
-  #${phd_src_dir}/cam_NebSBIG.cpp
-  #${phd_src_dir}/cam_NebSBIG.h
-  #${phd_src_dir}/cam_opencv.cpp
-  #${phd_src_dir}/cam_opencv.h
-  #${phd_src_dir}/cam_openssag.cpp
-  #${phd_src_dir}/cam_openssag.h
-  #${phd_src_dir}/cam_OSPL130.cpp
-  #${phd_src_dir}/cam_OSPL130.h
-  #${phd_src_dir}/cam_qguide.cpp
-  #${phd_src_dir}/cam_qguide.h
-  #${phd_src_dir}/cam_qhy.cpp
-  #${phd_src_dir}/cam_qhy.h
-  #${phd_src_dir}/cam_SAC42.cpp
-  #${phd_src_dir}/cam_SAC42.h
-  #${phd_src_dir}/cam_SACGuide.cpp
-  #${phd_src_dir}/cam_SACGuide.h
-  #${phd_src_dir}/cam_sbig.cpp
-  #${phd_src_dir}/cam_sbig.h
-  #${phd_src_dir}/cam_sbigrotator.cpp
-  #${phd_src_dir}/cam_sbigrotator.h
-  #${phd_src_dir}/cam_skyraider.cpp
-  #${phd_src_dir}/cam_skyraider.h
-  #${phd_src_dir}/cam_ssag.cpp
-  #${phd_src_dir}/cam_ssag.h
-  #${phd_src_dir}/cam_sspiag.cpp
-  #${phd_src_dir}/cam_sspiag.h
-  #${phd_src_dir}/cam_starfish.cpp
-  #${phd_src_dir}/cam_starfish.h
-  #${phd_src_dir}/cam_StarShootDSCI.cpp
-  #${phd_src_dir}/cam_StarShootDSCI.h
-  #${phd_src_dir}/cam_svb.cpp
-  #${phd_src_dir}/cam_svb.h
-  #${phd_src_dir}/cam_sxv.cpp
-  #${phd_src_dir}/cam_sxv.h
+  #${phd_src_dir}/server/guider/cam_LEwebcam.cpp
+  #${phd_src_dir}/server/guider/cam_MeadeDSI.cpp
+  #${phd_src_dir}/server/guider/cam_MeadeDSI.h
+  #${phd_src_dir}/server/guider/cam_moravian.cpp
+  #${phd_src_dir}/server/guider/cam_moravian.h
+  #${phd_src_dir}/server/guider/cam_NebSBIG.cpp
+  #${phd_src_dir}/server/guider/cam_NebSBIG.h
+  #${phd_src_dir}/server/guider/cam_opencv.cpp
+  #${phd_src_dir}/server/guider/cam_opencv.h
+  #${phd_src_dir}/server/guider/cam_openssag.cpp
+  #${phd_src_dir}/server/guider/cam_openssag.h
+  #${phd_src_dir}/server/guider/cam_OSPL130.cpp
+  #${phd_src_dir}/server/guider/cam_OSPL130.h
+  #${phd_src_dir}/server/guider/cam_qguide.cpp
+  #${phd_src_dir}/server/guider/cam_qguide.h
+  #${phd_src_dir}/server/guider/cam_qhy.cpp
+  #${phd_src_dir}/server/guider/cam_qhy.h
+  #${phd_src_dir}/server/guider/cam_SAC42.cpp
+  #${phd_src_dir}/server/guider/cam_SAC42.h
+  #${phd_src_dir}/server/guider/cam_SACGuide.cpp
+  #${phd_src_dir}/server/guider/cam_SACGuide.h
+  #${phd_src_dir}/server/guider/cam_sbig.cpp
+  #${phd_src_dir}/server/guider/cam_sbig.h
+  #${phd_src_dir}/server/guider/cam_sbigrotator.cpp
+  #${phd_src_dir}/server/guider/cam_sbigrotator.h
+  #${phd_src_dir}/server/guider/cam_skyraider.cpp
+  #${phd_src_dir}/server/guider/cam_skyraider.h
+  #${phd_src_dir}/server/guider/cam_ssag.cpp
+  #${phd_src_dir}/server/guider/cam_ssag.h
+  #${phd_src_dir}/server/guider/cam_sspiag.cpp
+  #${phd_src_dir}/server/guider/cam_sspiag.h
+  #${phd_src_dir}/server/guider/cam_starfish.cpp
+  #${phd_src_dir}/server/guider/cam_starfish.h
+  #${phd_src_dir}/server/guider/cam_StarShootDSCI.cpp
+  #${phd_src_dir}/server/guider/cam_StarShootDSCI.h
+  #${phd_src_dir}/server/guider/cam_svb.cpp
+  #${phd_src_dir}/server/guider/cam_svb.h
+  #${phd_src_dir}/server/guider/cam_sxv.cpp
+  #${phd_src_dir}/server/guider/cam_sxv.h
   #${SXV_PLATFORM_SRC}
-  #${phd_src_dir}/cam_touptek.cpp
-  #${phd_src_dir}/cam_touptek.h
-  #${phd_src_dir}/cam_vfw.cpp
-  #${phd_src_dir}/cam_vfw.h
-  #${phd_src_dir}/cam_wdm_base.h
-  #${phd_src_dir}/cam_wdm.cpp
-  #${phd_src_dir}/cam_wdm.h
-  #${phd_src_dir}/cam_zwo.cpp
-  #${phd_src_dir}/cam_zwo.h
+  #${phd_src_dir}/server/guider/cam_touptek.cpp
+  #${phd_src_dir}/server/guider/cam_touptek.h
+  #${phd_src_dir}/server/guider/cam_vfw.cpp
+  #${phd_src_dir}/server/guider/cam_vfw.h
+  #${phd_src_dir}/server/guider/cam_wdm_base.h
+  #${phd_src_dir}/server/guider/cam_wdm.cpp
+  #${phd_src_dir}/server/guider/cam_wdm.h
+  #${phd_src_dir}/server/guider/cam_zwo.cpp
+  #${phd_src_dir}/server/guider/cam_zwo.h
 
-  ${phd_src_dir}/camera/camera.cpp
-  ${phd_src_dir}/camera/camera.h
-  ${phd_src_dir}/camera/cameras.h
+  ${phd_src_dir}/server/guider/camera/camera.cpp
+  ${phd_src_dir}/server/guider/camera/camera.h
+  ${phd_src_dir}/server/guider/camera/cameras.h
 )
 
 # windows specific cameras
 if(WIN32)
   set(cam_SRC
     ${cam_SRC}
-    #${phd_src_dir}/cam_LEParallelWebcam.cpp
-    #${phd_src_dir}/cam_LEParallelWebcam.h
-    #${phd_src_dir}/cam_LESerialWebcam.cpp
-    #${phd_src_dir}/cam_LESerialWebcam.h
-    #${phd_src_dir}/cam_LELXUSBWebcam.cpp
-    #${phd_src_dir}/cam_LELXUSBWebcam.h
+    #${phd_src_dir}/server/guider/cam_LEParallelWebcam.cpp
+    #${phd_src_dir}/server/guider/cam_LEParallelWebcam.h
+    #${phd_src_dir}/server/guider/cam_LESerialWebcam.cpp
+    #${phd_src_dir}/server/guider/cam_LESerialWebcam.h
+    #${phd_src_dir}/server/guider/cam_LELXUSBWebcam.cpp
+    #${phd_src_dir}/server/guider/cam_LELXUSBWebcam.h
 
-    #${phd_src_dir}/cam_atik16.cpp
-    #${phd_src_dir}/cam_atik16.h
+    #${phd_src_dir}/server/guider/cam_atik16.cpp
+    #${phd_src_dir}/server/guider/cam_atik16.h
 
-    #${phd_src_dir}/cameras/ArtemisHSCAPI.h
-    #${phd_src_dir}/cameras/ArtemisHSCAPI.cpp
+    #${phd_src_dir}/server/guider/cameras/ArtemisHSCAPI.h
+    #${phd_src_dir}/server/guider/cameras/ArtemisHSCAPI.cpp
   )
 elseif(UNIX AND (NOT APPLE))
   set(cam_SRC
       ${cam_SRC}
-      #${phd_src_dir}/cam_qhy5.h
-      #${phd_src_dir}/cam_qhy5.cpp
+      #${phd_src_dir}/server/guider/cam_qhy5.h
+      #${phd_src_dir}/server/guider/cam_qhy5.cpp
      )
 elseif(APPLE)
   set(cam_SRC
@@ -275,74 +275,74 @@ endif()
 source_group(Cameras FILES ${cam_SRC})
 
 set(scopes_SRC
-  ${phd_src_dir}/telescope/mount.cpp
-  ${phd_src_dir}/telescope/mount.h
-  ${phd_src_dir}/telescope/scope.cpp
-  ${phd_src_dir}/telescope/scope.h
-  ${phd_src_dir}/telescope/scope_ascom.cpp
-  ${phd_src_dir}/telescope/scope_ascom.h
-  ${phd_src_dir}/telescope/scope_eqmac.cpp
-  ${phd_src_dir}/telescope/scope_eqmac.h
-  ${phd_src_dir}/telescope/scope_equinox.cpp
-  ${phd_src_dir}/telescope/scope_equinox.h
-  ${phd_src_dir}/telescope/scope_GC_USBST4.cpp
-  ${phd_src_dir}/telescope/scope_GC_USBST4.h
-  ${phd_src_dir}/telescope/scope_gpint.cpp
-  ${phd_src_dir}/telescope/scope_gpint.h
-  ${phd_src_dir}/telescope/scope_gpusb.cpp
-  ${phd_src_dir}/telescope/scope_gpusb.h
-  ${phd_src_dir}/telescope/scope_manual_pointing.cpp
-  ${phd_src_dir}/telescope/scope_manual_pointing.h
-  ${phd_src_dir}/telescope/scope_onboard_st4.cpp
-  ${phd_src_dir}/telescope/scope_onboard_st4.h
-  ${phd_src_dir}/telescope/scope_oncamera.cpp
-  ${phd_src_dir}/telescope/scope_oncamera.h
-  ${phd_src_dir}/telescope/scope_onstepguider.cpp
-  ${phd_src_dir}/telescope/scope_onstepguider.h
-  ${phd_src_dir}/telescope/scope_voyager.cpp
-  ${phd_src_dir}/telescope/scope_voyager.h
-  ${phd_src_dir}/telescope/scope_indi.h
-  ${phd_src_dir}/telescope/scope_indi.cpp
-  ${phd_src_dir}/telescope/scopes.h
-  ${phd_src_dir}/stepguider_sxao.cpp
-  ${phd_src_dir}/stepguider_sxao.h
-  ${phd_src_dir}/stepguider_sxao_indi.cpp
-  ${phd_src_dir}/stepguider_sxao_indi.h
-  ${phd_src_dir}/stepguider_sbigao_indi.cpp
-  ${phd_src_dir}/stepguider_sbigao_indi.h
-  ${phd_src_dir}/stepguider.cpp
-  ${phd_src_dir}/stepguider.h
-  ${phd_src_dir}/stepguiders.h
+  ${phd_src_dir}/server/guider/telescope/mount.cpp
+  ${phd_src_dir}/server/guider/telescope/mount.h
+  ${phd_src_dir}/server/guider/telescope/scope.cpp
+  ${phd_src_dir}/server/guider/telescope/scope.h
+  ${phd_src_dir}/server/guider/telescope/scope_ascom.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_ascom.h
+  ${phd_src_dir}/server/guider/telescope/scope_eqmac.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_eqmac.h
+  ${phd_src_dir}/server/guider/telescope/scope_equinox.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_equinox.h
+  ${phd_src_dir}/server/guider/telescope/scope_GC_USBST4.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_GC_USBST4.h
+  ${phd_src_dir}/server/guider/telescope/scope_gpint.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_gpint.h
+  ${phd_src_dir}/server/guider/telescope/scope_gpusb.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_gpusb.h
+  ${phd_src_dir}/server/guider/telescope/scope_manual_pointing.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_manual_pointing.h
+  ${phd_src_dir}/server/guider/telescope/scope_onboard_st4.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_onboard_st4.h
+  ${phd_src_dir}/server/guider/telescope/scope_oncamera.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_oncamera.h
+  ${phd_src_dir}/server/guider/telescope/scope_onstepguider.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_onstepguider.h
+  ${phd_src_dir}/server/guider/telescope/scope_voyager.cpp
+  ${phd_src_dir}/server/guider/telescope/scope_voyager.h
+  ${phd_src_dir}/server/guider/telescope/scope_indi.h
+  ${phd_src_dir}/server/guider/telescope/scope_indi.cpp
+  ${phd_src_dir}/server/guider/telescope/scopes.h
+  ${phd_src_dir}/server/guider/stepguider_sxao.cpp
+  ${phd_src_dir}/server/guider/stepguider_sxao.h
+  ${phd_src_dir}/server/guider/stepguider_sxao_indi.cpp
+  ${phd_src_dir}/server/guider/stepguider_sxao_indi.h
+  ${phd_src_dir}/server/guider/stepguider_sbigao_indi.cpp
+  ${phd_src_dir}/server/guider/stepguider_sbigao_indi.h
+  ${phd_src_dir}/server/guider/stepguider.cpp
+  ${phd_src_dir}/server/guider/stepguider.h
+  ${phd_src_dir}/server/guider/stepguiders.h
 )
 source_group(Scopes FILES ${scopes_SRC})
 
 set(guiding_SRC
-  ${phd_src_dir}/backlash_comp.cpp
-  ${phd_src_dir}/backlash_comp.h
-  ${phd_src_dir}/algorithm/guide_algorithm_hysteresis.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_hysteresis.h
-  ${phd_src_dir}/algorithm/guide_algorithm_gaussian_process.cpp # MPI.IS PEC Guider: requires link to the GP target (contrib)
-  ${phd_src_dir}/algorithm/guide_algorithm_gaussian_process.h
-  ${phd_src_dir}/algorithm/guide_algorithm_identity.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_identity.h
-  ${phd_src_dir}/algorithm/guide_algorithm_lowpass.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_lowpass.h
-  ${phd_src_dir}/algorithm/guide_algorithm_lowpass2.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_lowpass2.h
-  ${phd_src_dir}/algorithm/guide_algorithm_resistswitch.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_resistswitch.h
-  ${phd_src_dir}/algorithm/guide_algorithm_zfilter.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm_zfilter.h
-  ${phd_src_dir}/algorithm/guide_algorithm.cpp
-  ${phd_src_dir}/algorithm/guide_algorithm.h
-  ${phd_src_dir}/algorithm/guide_algorithms.h
-  ${phd_src_dir}/algorithm/guider_multistar.cpp
-  ${phd_src_dir}/algorithm/guider_multistar.h
-  ${phd_src_dir}/guider.cpp
-  ${phd_src_dir}/guider.h
-  ${phd_src_dir}/guiders.h
-  ${phd_src_dir}/zfilterfactory.cpp
-  ${phd_src_dir}/zfilterfactory.h
+  ${phd_src_dir}/server/guider/backlash_comp.cpp
+  ${phd_src_dir}/server/guider/backlash_comp.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_hysteresis.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_hysteresis.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_gaussian_process.cpp # MPI.IS PEC Guider: requires link to the GP target (contrib)
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_gaussian_process.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_identity.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_identity.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_lowpass.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_lowpass.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_lowpass2.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_lowpass2.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_resistswitch.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_resistswitch.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_zfilter.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm_zfilter.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm.cpp
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithm.h
+  ${phd_src_dir}/server/guider/algorithm/guide_algorithms.h
+  ${phd_src_dir}/server/guider/algorithm/guider_multistar.cpp
+  ${phd_src_dir}/server/guider/algorithm/guider_multistar.h
+  ${phd_src_dir}/server/guider/guider.cpp
+  ${phd_src_dir}/server/guider/guider.h
+  ${phd_src_dir}/server/guider/guiders.h
+  ${phd_src_dir}/server/guider/zfilterfactory.cpp
+  ${phd_src_dir}/server/guider/zfilterfactory.h
 )
 source_group(Guiding FILES ${guiding_SRC})
 
@@ -350,155 +350,155 @@ source_group(Guiding FILES ${guiding_SRC})
 
 # it would ease if files are organised in an alphabetical order
 set(phd2_SRC
-  ${phd_src_dir}/gui/about_dialog.cpp
-  ${phd_src_dir}/gui/about_dialog.h
-  ${phd_src_dir}/gui/advanced_dialog.cpp
-  ${phd_src_dir}/gui/advanced_dialog.h
-  ${phd_src_dir}/gui/aui_controls.cpp
-  ${phd_src_dir}/gui/aui_controls.h
+  ${phd_src_dir}/server/guider/gui/about_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/about_dialog.h
+  ${phd_src_dir}/server/guider/gui/advanced_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/advanced_dialog.h
+  ${phd_src_dir}/server/guider/gui/aui_controls.cpp
+  ${phd_src_dir}/server/guider/gui/aui_controls.h
 
-  ${phd_src_dir}/gui/calreview_dialog.cpp
-  ${phd_src_dir}/gui/calreview_dialog.h
+  ${phd_src_dir}/server/guider/gui/calreview_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/calreview_dialog.h
 
-  ${phd_src_dir}/gui/calstep_dialog.cpp
-  ${phd_src_dir}/gui/calstep_dialog.h
-  ${phd_src_dir}/camera/camcal_import_dialog.cpp
-  ${phd_src_dir}/camera/camcal_import_dialog.h
-  ${phd_src_dir}/circbuf.h
+  ${phd_src_dir}/server/guider/gui/calstep_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/calstep_dialog.h
+  ${phd_src_dir}/server/guider/camera/camcal_import_dialog.cpp
+  ${phd_src_dir}/server/guider/camera/camcal_import_dialog.h
+  ${phd_src_dir}/server/guider/circbuf.h
 
-  ${phd_src_dir}/comet_tool.cpp
-  ${phd_src_dir}/comet_tool.h
+  ${phd_src_dir}/server/guider/comet_tool.cpp
+  ${phd_src_dir}/server/guider/comet_tool.h
 
-  ${phd_src_dir}/config_indi.cpp
-  ${phd_src_dir}/config_indi.h
-  ${phd_src_dir}/gui/configdialog.cpp
-  ${phd_src_dir}/gui/configdialog.h
-  ${phd_src_dir}/gui/confirm_dialog.cpp
-  ${phd_src_dir}/gui/confirm_dialog.h
-  ${phd_src_dir}/gui/darks_dialog.cpp
-  ${phd_src_dir}/gui/darks_dialog.h
-  ${phd_src_dir}/debuglog.cpp
-  ${phd_src_dir}/debuglog.h
-  ${phd_src_dir}/drift_tool.cpp
-  ${phd_src_dir}/drift_tool.h
-  ${phd_src_dir}/eegg.cpp
-  ${phd_src_dir}/event_server.cpp
-  ${phd_src_dir}/event_server.h
+  ${phd_src_dir}/server/guider/config_indi.cpp
+  ${phd_src_dir}/server/guider/config_indi.h
+  ${phd_src_dir}/server/guider/gui/configdialog.cpp
+  ${phd_src_dir}/server/guider/gui/configdialog.h
+  ${phd_src_dir}/server/guider/gui/confirm_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/confirm_dialog.h
+  ${phd_src_dir}/server/guider/gui/darks_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/darks_dialog.h
+  ${phd_src_dir}/server/guider/debuglog.cpp
+  ${phd_src_dir}/server/guider/debuglog.h
+  ${phd_src_dir}/server/guider/drift_tool.cpp
+  ${phd_src_dir}/server/guider/drift_tool.h
+  ${phd_src_dir}/server/guider/eegg.cpp
+  ${phd_src_dir}/server/guider/event_server.cpp
+  ${phd_src_dir}/server/guider/event_server.h
 
-  ${phd_src_dir}/fitsiowrap.cpp
-  ${phd_src_dir}/fitsiowrap.h
+  ${phd_src_dir}/server/guider/fitsiowrap.cpp
+  ${phd_src_dir}/server/guider/fitsiowrap.h
 
-  ${phd_src_dir}/gui/gear_dialog.cpp
-  ${phd_src_dir}/gui/gear_dialog.h
-  ${phd_src_dir}/gear_simulator.h
-  ${phd_src_dir}/gear_simulator.cpp
-  ${phd_src_dir}/graph-stepguider.cpp
-  ${phd_src_dir}/graph-stepguider.h
-  ${phd_src_dir}/graph.cpp
-  ${phd_src_dir}/graph.h
-  ${phd_src_dir}/guiding_assistant.cpp
-  ${phd_src_dir}/guiding_assistant.h
-  ${phd_src_dir}/guidinglog.cpp
-  ${phd_src_dir}/guidinglog.h
-  ${phd_src_dir}/guiding_stats.cpp
-  ${phd_src_dir}/guiding_stats.h
-  ${phd_src_dir}/image_math.cpp
-  ${phd_src_dir}/image_math.h
-  ${phd_src_dir}/imagelogger.cpp
-  ${phd_src_dir}/imagelogger.h
-  ${phd_src_dir}/indi_gui.cpp
-  ${phd_src_dir}/indi_gui.h
-  ${phd_src_dir}/json_parser.cpp
-  ${phd_src_dir}/json_parser.h
-  ${phd_src_dir}/logger.cpp
-  ${phd_src_dir}/logger.h
-  ${phd_src_dir}/log_uploader.cpp
-  ${phd_src_dir}/log_uploader.h
-  ${phd_src_dir}/gui/manualcal_dialog.cpp
-  ${phd_src_dir}/gui/manualcal_dialog.h
-  ${phd_src_dir}/messagebox_proxy.cpp
-  ${phd_src_dir}/messagebox_proxy.h
-  ${phd_src_dir}/gui/myframe.cpp
-  ${phd_src_dir}/gui/myframe.h
-  ${phd_src_dir}/gui/myframe_events.cpp
-  ${phd_src_dir}/nudge_lock.cpp
-  ${phd_src_dir}/nudge_lock.h
-  ${phd_src_dir}/onboard_st4.cpp
-  ${phd_src_dir}/onboard_st4.h
-  ${phd_src_dir}/optionsbutton.cpp
-  ${phd_src_dir}/optionsbutton.h
-  ${phd_src_dir}/phd.cpp
-  ${phd_src_dir}/phd.h
-  ${phd_src_dir}/phdconfig.cpp
-  ${phd_src_dir}/phdconfig.h
-  ${phd_src_dir}/phdcontrol.cpp
-  ${phd_src_dir}/phdcontrol.h
-  ${phd_src_dir}/phdindiclient.cpp
-  ${phd_src_dir}/phdindiclient.h
-  ${phd_src_dir}/phdupdate.cpp
-  ${phd_src_dir}/phdupdate.h
-  ${phd_src_dir}/pierflip_tool.cpp
-  ${phd_src_dir}/pierflip_tool.h
-  ${phd_src_dir}/polardrift_tool.h
-  ${phd_src_dir}/polardrift_toolwin.h
-  ${phd_src_dir}/polardrift_toolwin.cpp
-  ${phd_src_dir}/gui/profile_wizard.h
-  ${phd_src_dir}/gui/profile_wizard.cpp
-  ${phd_src_dir}/point.h
-  ${phd_src_dir}/Refine_DefMap.cpp
-  ${phd_src_dir}/Refine_DefMap.h
+  ${phd_src_dir}/server/guider/gui/gear_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/gear_dialog.h
+  ${phd_src_dir}/server/guider/gear_simulator.h
+  ${phd_src_dir}/server/guider/gear_simulator.cpp
+  ${phd_src_dir}/server/guider/graph-stepguider.cpp
+  ${phd_src_dir}/server/guider/graph-stepguider.h
+  ${phd_src_dir}/server/guider/graph.cpp
+  ${phd_src_dir}/server/guider/graph.h
+  ${phd_src_dir}/server/guider/guiding_assistant.cpp
+  ${phd_src_dir}/server/guider/guiding_assistant.h
+  ${phd_src_dir}/server/guider/guidinglog.cpp
+  ${phd_src_dir}/server/guider/guidinglog.h
+  ${phd_src_dir}/server/guider/guiding_stats.cpp
+  ${phd_src_dir}/server/guider/guiding_stats.h
+  ${phd_src_dir}/server/guider/image_math.cpp
+  ${phd_src_dir}/server/guider/image_math.h
+  ${phd_src_dir}/server/guider/imagelogger.cpp
+  ${phd_src_dir}/server/guider/imagelogger.h
+  ${phd_src_dir}/server/guider/indi_gui.cpp
+  ${phd_src_dir}/server/guider/indi_gui.h
+  ${phd_src_dir}/server/guider/json_parser.cpp
+  ${phd_src_dir}/server/guider/json_parser.h
+  ${phd_src_dir}/server/guider/logger.cpp
+  ${phd_src_dir}/server/guider/logger.h
+  ${phd_src_dir}/server/guider/log_uploader.cpp
+  ${phd_src_dir}/server/guider/log_uploader.h
+  ${phd_src_dir}/server/guider/gui/manualcal_dialog.cpp
+  ${phd_src_dir}/server/guider/gui/manualcal_dialog.h
+  ${phd_src_dir}/server/guider/messagebox_proxy.cpp
+  ${phd_src_dir}/server/guider/messagebox_proxy.h
+  ${phd_src_dir}/server/guider/gui/myframe.cpp
+  ${phd_src_dir}/server/guider/gui/myframe.h
+  ${phd_src_dir}/server/guider/gui/myframe_events.cpp
+  ${phd_src_dir}/server/guider/nudge_lock.cpp
+  ${phd_src_dir}/server/guider/nudge_lock.h
+  ${phd_src_dir}/server/guider/onboard_st4.cpp
+  ${phd_src_dir}/server/guider/onboard_st4.h
+  ${phd_src_dir}/server/guider/optionsbutton.cpp
+  ${phd_src_dir}/server/guider/optionsbutton.h
+  ${phd_src_dir}/server/guider/phd.cpp
+  ${phd_src_dir}/server/guider/phd.h
+  ${phd_src_dir}/server/guider/phdconfig.cpp
+  ${phd_src_dir}/server/guider/phdconfig.h
+  ${phd_src_dir}/server/guider/phdcontrol.cpp
+  ${phd_src_dir}/server/guider/phdcontrol.h
+  ${phd_src_dir}/server/guider/phdindiclient.cpp
+  ${phd_src_dir}/server/guider/phdindiclient.h
+  ${phd_src_dir}/server/guider/phdupdate.cpp
+  ${phd_src_dir}/server/guider/phdupdate.h
+  ${phd_src_dir}/server/guider/pierflip_tool.cpp
+  ${phd_src_dir}/server/guider/pierflip_tool.h
+  ${phd_src_dir}/server/guider/polardrift_tool.h
+  ${phd_src_dir}/server/guider/polardrift_toolwin.h
+  ${phd_src_dir}/server/guider/polardrift_toolwin.cpp
+  ${phd_src_dir}/server/guider/gui/profile_wizard.h
+  ${phd_src_dir}/server/guider/gui/profile_wizard.cpp
+  ${phd_src_dir}/server/guider/point.h
+  ${phd_src_dir}/server/guider/Refine_DefMap.cpp
+  ${phd_src_dir}/server/guider/Refine_DefMap.h
 
   # rotators
-  ${phd_src_dir}/rotators.h
+  ${phd_src_dir}/server/guider/rotators.h
 
-  ${phd_src_dir}/rotator.cpp
-  ${phd_src_dir}/rotator.h
+  ${phd_src_dir}/server/guider/rotator.cpp
+  ${phd_src_dir}/server/guider/rotator.h
 
-  ${phd_src_dir}/rotator_ascom.cpp
-  ${phd_src_dir}/rotator_ascom.h
+  ${phd_src_dir}/server/guider/rotator_ascom.cpp
+  ${phd_src_dir}/server/guider/rotator_ascom.h
 
   ###
 
-  ${phd_src_dir}/runinbg.cpp
-  ${phd_src_dir}/runinbg.h
+  ${phd_src_dir}/server/guider/runinbg.cpp
+  ${phd_src_dir}/server/guider/runinbg.h
 
-  ${phd_src_dir}/serialport.cpp
-  ${phd_src_dir}/serialport.h
-  ${phd_src_dir}/serialport_loopback.cpp
-  ${phd_src_dir}/serialport_loopback.h
-  ${phd_src_dir}/serialport_mac.cpp
-  ${phd_src_dir}/serialport_mac.h
-  ${phd_src_dir}/serialport_win32.cpp
-  ${phd_src_dir}/serialport_win32.h
-  ${phd_src_dir}/serialport_posix.cpp
-  ${phd_src_dir}/serialport_posix.h
-  ${phd_src_dir}/serialports.h
-  ${phd_src_dir}/sha1.cpp
-  ${phd_src_dir}/sha1.h
-  ${phd_src_dir}/socket_server.cpp
-  ${phd_src_dir}/socket_server.h
-  ${phd_src_dir}/starcross_test.cpp
-  ${phd_src_dir}/starcross_test.h
-  ${phd_src_dir}/staticpa_tool.h
-  ${phd_src_dir}/staticpa_toolwin.h
-  ${phd_src_dir}/staticpa_toolwin.cpp
-  ${phd_src_dir}/gui/statswindow.cpp
-  ${phd_src_dir}/gui/statswindow.h
+  ${phd_src_dir}/server/guider/serialport.cpp
+  ${phd_src_dir}/server/guider/serialport.h
+  ${phd_src_dir}/server/guider/serialport_loopback.cpp
+  ${phd_src_dir}/server/guider/serialport_loopback.h
+  ${phd_src_dir}/server/guider/serialport_mac.cpp
+  ${phd_src_dir}/server/guider/serialport_mac.h
+  ${phd_src_dir}/server/guider/serialport_win32.cpp
+  ${phd_src_dir}/server/guider/serialport_win32.h
+  ${phd_src_dir}/server/guider/serialport_posix.cpp
+  ${phd_src_dir}/server/guider/serialport_posix.h
+  ${phd_src_dir}/server/guider/serialports.h
+  ${phd_src_dir}/server/guider/sha1.cpp
+  ${phd_src_dir}/server/guider/sha1.h
+  ${phd_src_dir}/server/guider/socket_server.cpp
+  ${phd_src_dir}/server/guider/socket_server.h
+  ${phd_src_dir}/server/guider/starcross_test.cpp
+  ${phd_src_dir}/server/guider/starcross_test.h
+  ${phd_src_dir}/server/guider/staticpa_tool.h
+  ${phd_src_dir}/server/guider/staticpa_toolwin.h
+  ${phd_src_dir}/server/guider/staticpa_toolwin.cpp
+  ${phd_src_dir}/server/guider/gui/statswindow.cpp
+  ${phd_src_dir}/server/guider/gui/statswindow.h
 
-  ${phd_src_dir}/star.cpp
-  ${phd_src_dir}/star.h
-  ${phd_src_dir}/star_profile.cpp
-  ${phd_src_dir}/star_profile.h
-  ${phd_src_dir}/target.cpp
-  ${phd_src_dir}/target.h
-  ${phd_src_dir}/testguide.cpp
-  ${phd_src_dir}/testguide.h
-  ${phd_src_dir}/usImage.cpp
-  ${phd_src_dir}/usImage.h
-  ${phd_src_dir}/worker_thread.cpp
-  ${phd_src_dir}/worker_thread.h
-  ${phd_src_dir}/wxled.cpp
-  ${phd_src_dir}/wxled.h
+  ${phd_src_dir}/server/guider/star.cpp
+  ${phd_src_dir}/server/guider/star.h
+  ${phd_src_dir}/server/guider/star_profile.cpp
+  ${phd_src_dir}/server/guider/star_profile.h
+  ${phd_src_dir}/server/guider/target.cpp
+  ${phd_src_dir}/server/guider/target.h
+  ${phd_src_dir}/server/guider/testguide.cpp
+  ${phd_src_dir}/server/guider/testguide.h
+  ${phd_src_dir}/server/guider/usImage.cpp
+  ${phd_src_dir}/server/guider/usImage.h
+  ${phd_src_dir}/server/guider/worker_thread.cpp
+  ${phd_src_dir}/server/guider/worker_thread.h
+  ${phd_src_dir}/server/guider/wxled.cpp
+  ${phd_src_dir}/server/guider/wxled.h
 )
 
 if (WIN32)
@@ -506,15 +506,15 @@ if (WIN32)
       ${phd2_SRC}
 
       # windows-only sources
-      ${phd_src_dir}/parallelports.h
-      ${phd_src_dir}/parallelport.h
-      ${phd_src_dir}/parallelport.cpp
+      ${phd_src_dir}/server/guider/parallelports.h
+      ${phd_src_dir}/server/guider/parallelport.h
+      ${phd_src_dir}/server/guider/parallelport.cpp
 
-      ${phd_src_dir}/parallelport_win32.h
-      ${phd_src_dir}/parallelport_win32.cpp
+      ${phd_src_dir}/server/guider/parallelport_win32.h
+      ${phd_src_dir}/server/guider/parallelport_win32.cpp
 
-      ${phd_src_dir}/comdispatch.h
-      ${phd_src_dir}/comdispatch.cpp
+      ${phd_src_dir}/server/guider/comdispatch.h
+      ${phd_src_dir}/server/guider/comdispatch.cpp
      )
 endif()
 source_group(src FILES ${phd2_SRC})
@@ -583,17 +583,17 @@ if(APPLE)
     ${phd2_SRC}
 
     # resources of the bundle
-    ${phd_src_dir}/${MACOSX_BUNDLE_ICON_FILE}
+    ${phd_src_dir}/server/guider/${MACOSX_BUNDLE_ICON_FILE}
 
     # extra frameworks
     ${phd2_OSX_FRAMEWORKS}
 
-    ${phd_src_dir}/run_phd2_macos
+    ${phd_src_dir}/server/guider/run_phd2_macos
   )
   set_target_properties(
     phd2
     PROPERTIES
-    MACOSX_BUNDLE_INFO_PLIST ${phd_src_dir}/MacOSXBundleInfo.plist.in
+    MACOSX_BUNDLE_INFO_PLIST ${phd_src_dir}/server/guider/MacOSXBundleInfo.plist.in
     OUTPUT_NAME PHD2  # upper case on OSX
   )
   target_include_directories(
@@ -602,13 +602,13 @@ if(APPLE)
   )
 
   set_source_files_properties(
-    ${phd_src_dir}/${MACOSX_BUNDLE_ICON_FILE}
+    ${phd_src_dir}/server/guider/${MACOSX_BUNDLE_ICON_FILE}
       PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
   )
 
   set_source_files_properties(
-    ${phd_src_dir}/run_phd2_macos
+    ${phd_src_dir}/server/guider/run_phd2_macos
     PROPERTIES
       MACOSX_PACKAGE_LOCATION MacOS
   )
@@ -739,7 +739,7 @@ elseif(WIN32)
   ADD_MSVC_PRECOMPILED_HEADER("phd.h" "precompiled_header.cpp" phd2_WIN_SRC)
 
   # resource file, some VC do not like the options provided by the precompiled headers
-  set(phd2_WIN_SRC ${phd2_WIN_SRC} ${phd_src_dir}/phd.rc)
+  set(phd2_WIN_SRC ${phd2_WIN_SRC} ${phd_src_dir}/server/guider/phd.rc)
   source_group(src FILES precompiled_header.cpp)
 
   link_directories("C:/Program Files (x86)/Visual Leak Detector/lib/win32")

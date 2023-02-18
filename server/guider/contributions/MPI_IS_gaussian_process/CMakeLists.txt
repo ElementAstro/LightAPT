@@ -34,8 +34,6 @@ project(MPI_IS_GaussianProcess)
  
 set(gaussian_process_root_dir ${CMAKE_CURRENT_SOURCE_DIR})
 
-
-
 # Gaussian Process toolbox library
 set(gp_tools_SRC
     ${gaussian_process_root_dir}/tools/math_tools.cpp
@@ -43,7 +41,7 @@ set(gp_tools_SRC
    )
 add_library(MPIIS_GP_TOOLS STATIC ${gp_tools_SRC})
 target_include_directories(MPIIS_GP_TOOLS PRIVATE ${EIGEN_SRC} ${gaussian_process_root_dir}/src)
-set_property(TARGET MPIIS_GP_TOOLS PROPERTY FOLDER "Contributions/")
+set_property(TARGET MPIIS_GP_TOOLS PROPERTY FOLDER "contributions/")
 
 # Gaussian Process main library
 set(gp_SRC
@@ -57,7 +55,9 @@ target_link_libraries(MPIIS_GP PUBLIC MPIIS_GP_TOOLS)
 target_include_directories(MPIIS_GP PUBLIC 
                            ${EIGEN_SRC} ${gaussian_process_root_dir}/src
                            ${gaussian_process_root_dir}/tools)
-set_property(TARGET MPIIS_GP PROPERTY FOLDER "Contributions/")
+set_property(TARGET MPIIS_GP PROPERTY FOLDER "contributions/")
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 # Gaussian Process Guider library
 set(gpg_SRC

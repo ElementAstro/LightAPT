@@ -44,6 +44,8 @@ from .ws.indi import (INDIClientWebSocket,INDIDebugWebSocket,INDIDebugHtml,
                         INDIServerConnect,INDIServerDisconnect,INDIServerIsConnected
                         )
 
+import server.api
+
 from .webssh.handler import IndexHandler as webssh_index_handler
 from .webssh.handler import WsockHandler as webssh_wsock_handler
 

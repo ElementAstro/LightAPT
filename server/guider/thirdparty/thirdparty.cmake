@@ -28,7 +28,7 @@
 
 # File created by Raffi Enficiaud
 
-set(thirdparty_dir ${CMAKE_SOURCE_DIR}/thirdparty)
+set(thirdparty_dir ${CMAKE_SOURCE_DIR}/server/guider/thirdparty)
 
 # the location where the archives will be deflated
 set(thirdparties_deflate_directory ${CMAKE_BINARY_DIR}/external_libs_deflate)
@@ -187,7 +187,7 @@ endif()
 
 ##############################################
 # cfitsio
-
+set(USE_SYSTEM_CFITSIO ON)
 if(USE_SYSTEM_CFITSIO)
   find_package(CFITSIO REQUIRED)
   include_directories(${CFITSIO_INCLUDE_DIR})
