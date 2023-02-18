@@ -58,6 +58,8 @@ webssh_logger = create_logger("webssh")
 indi_logger = create_logger("indi")
 # logger for PHD2
 phd2_logger = create_logger("phd2")
+# logger for polar align
+polar_align_logger = create_logger("polar-align")
 
 # #################################################################
 # For old ASCOM API

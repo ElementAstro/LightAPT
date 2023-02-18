@@ -1,5 +1,4 @@
 astropy
-bottleneck
 ephem
 numpy
 opencv-python

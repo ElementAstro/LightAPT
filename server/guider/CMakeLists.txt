@@ -780,7 +780,7 @@ elseif(UNIX)
   set_target_properties(
     phd2
     PROPERTIES
-      OUTPUT_NAME phd2.bin
+      OUTPUT_NAME guider
     )
 
 else()

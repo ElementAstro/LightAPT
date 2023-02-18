@@ -55,6 +55,7 @@ async def solve(image : str , ra = None , dec = None , radius = None , downsampl
             "dec" : None,
             "fov_x" : None,
             "fov_y" : None,
+            "ratation" : None,
             "message" : None
         }
         if faced error, then message will not be none and display basic error message.
@@ -65,6 +66,7 @@ async def solve(image : str , ra = None , dec = None , radius = None , downsampl
             "dec" : None,
             "fov_x" : None,
             "fov_y" : None,
+            "ratation" : None,
             "message" : None
         }
 
@@ -98,7 +100,7 @@ async def solve(image : str , ra = None , dec = None , radius = None , downsampl
     if height is not None and isinstance(height,int):
         command.extend(["--height",str(height)])
     if scale_units is not None and isinstance(scale_units,str):
-        command.extend(["--scale_units",scale_units])
+        command.extend(["--scale-units",scale_units])
     if overwrite == True:
         command.append("--overwrite")
     if no_plot == True:
@@ -137,6 +139,9 @@ async def solve(image : str , ra = None , dec = None , radius = None , downsampl
         if item.find("Field size: ") != -1:
             fov_ = item.replace("Field size: ","").replace(" ","")
             ret_struct["fov_x"]  , ret_struct["fov_y"] = fov_.split("x")
+
+        if item.find("Field rotation angle: up is ") != -1:
+                ret_struct["ratation"] = item.replace("Field rotation angle: up is ","").replace(" degrees E of N","")
 
     if ret_struct['ra'] is None or ret_struct['dec'] is None:
         ret_struct['message'] = 'Solve failed'
