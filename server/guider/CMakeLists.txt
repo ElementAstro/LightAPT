@@ -92,7 +92,7 @@ include(cmake_modules/PHD2BuildDoc.cmake)
 
 # retrieves the version from the source file
 get_phd_version()
-message(STATUS "PHD2 version '${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}' (extracted from source)")
+message(STATUS "Build-In Guider version '${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}' (extracted from source)")
 
 
 
@@ -119,8 +119,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #
 # main project
 # this should appear after setting the architecture
-project(phd2)
-enable_testing()
+project(guider)
 
 
 #################################################################################
