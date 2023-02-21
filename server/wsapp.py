@@ -255,10 +255,13 @@ def make_server(loop, options) -> tornado.web.Application:
         autoreload = True
     ) 
 
-async def run_server() -> None:
+async def run_server(host : str = "127.0.0.1", port : str = 8080, debug : bool = False) -> None:
     """
         Run the tornado server
-        Args : None
+        Args : 
+            host : str # host of the server , default is 127.0.0.1
+            port : int # port of the server , default is 8080
+            debug : bool # whether start debug mode
         Returns : None
         NOTE : There must use asyncio.run to execute
     """
@@ -277,12 +280,6 @@ async def run_server() -> None:
     logger.info("Started SSL server on %s:%d" % (options.address,options.port))
     shutdown = asyncio.Event()
     await shutdown.wait()
-
-def async_run_server() -> None:
-    """
-        Just a wrapper around asyncio.run
-    """
-    asyncio.run(run_server())
 
 if __name__ == "__main__":
     # If the server is running in main thread
