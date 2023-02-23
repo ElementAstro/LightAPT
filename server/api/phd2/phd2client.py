@@ -19,9 +19,9 @@ Boston, MA 02110-1301, USA.
 """
 
 # #################################################################
-# 
-# This file is part of LightAPT server , which contains the functionality 
-# of the communication between the server and the PHD2 , via asynchronous 
+#
+# This file is part of LightAPT server , which contains the functionality
+# of the communication between the server and the PHD2 , via asynchronous
 # socket communication
 #
 # #################################################################
@@ -39,26 +39,29 @@ from utils.utility import switch
 from ...logging import phd2_logger as logger
 
 import psutil
-def check_process_exist(process_name : str) -> bool:
+
+
+def check_process_exist(process_name: str) -> bool:
     """
-        Check if process exists
-        Args:
-            process_name : str
-        Returns: bool
+    Check if process exists
+    Args:
+        process_name : str
+    Returns: bool
     """
     for proc in psutil.process_iter():
         if proc.name() == process_name:
             return True
     return False
 
+
 class TcpSocket(object):
     """
-        TCP socket client interface
+    TCP socket client interface
     """
 
     def __init__(self):
         self.lines = []
-        self.buf = b''
+        self.buf = b""
         self.sock = None
         self.sel = None
         self.terminate = False
@@ -66,7 +69,7 @@ class TcpSocket(object):
     def __del__(self):
         self.disconnect()
 
-    def connect(self, hostname : str, port : int) -> bool:
+    def connect(self, hostname: str, port: int) -> bool:
         self.sock = socket.socket()
         try:
             self.sock.connect((hostname, port))
@@ -96,7 +99,7 @@ class TcpSocket(object):
         while not self.lines:
             while True:
                 if self.terminate:
-                    return ''
+                    return ""
                 events = self.sel.select(0.5)
                 if events:
                     break
@@ -104,19 +107,19 @@ class TcpSocket(object):
             i0 = 0
             i = i0
             while i < len(s):
-                if s[i] == b'\r'[0] or s[i] == b'\n'[0]:
-                    self.buf += s[i0 : i]
+                if s[i] == b"\r"[0] or s[i] == b"\n"[0]:
+                    self.buf += s[i0:i]
                     if self.buf:
                         self.lines.append(self.buf)
-                        self.buf = b''
+                        self.buf = b""
                     i += 1
                     i0 = i
                 else:
                     i += 1
-            self.buf += s[i0 : i]
+            self.buf += s[i0:i]
         return self.lines.pop(0)
 
-    def send(self, s : str) -> bool:
+    def send(self, s: str) -> bool:
         b = s.encode()
         totsent = 0
         while totsent < len(b):
@@ -126,17 +129,18 @@ class TcpSocket(object):
             totsent += sent
         return True
 
+
 class PHD2ClientWorker(object):
     """
-        PHD2 client but alse worker , all of the functions should be asynchronous.
-        And do not exist any blocking operations , such as 'while True'
+    PHD2 client but alse worker , all of the functions should be asynchronous.
+    And do not exist any blocking operations , such as 'while True'
     """
 
     def __init__(self) -> None:
         """
-            Initialize the PHD2 client instance and prepare the connection
-            Args : None
-            Returns : None
+        Initialize the PHD2 client instance and prepare the connection
+        Args : None
+        Returns : None
         """
         self.client = TcpSocket()
         self.conn = TcpSocket()
@@ -169,7 +173,7 @@ class PHD2ClientWorker(object):
         self._is_star_found = False
         self._is_star_locked = False
         self._is_star_selected = False
-        self._star_position = [0,0]
+        self._star_position = [0, 0]
 
         self._is_guiding = False
         self._guiding_error = ""
@@ -179,7 +183,7 @@ class PHD2ClientWorker(object):
         self._is_selected = False
         self._settle_status = {}
         self._settle_error = ""
-        
+
         self._starlost_status = {}
         self._starlost_error = ""
 
@@ -201,43 +205,40 @@ class PHD2ClientWorker(object):
 
     def __del__(self) -> None:
         """
-            Destructor of the PHD2 client instance
+        Destructor of the PHD2 client instance
         """
 
     def __str__(self) -> str:
         """
-            Returns a string representation of the client instance
+        Returns a string representation of the client instance
         """
         return "LightAPT PHD2 Client and Network Worker"
-    
+
     # #################################################################
     #
     # Http Request Handler Functions
     #
     # #################################################################
-    
+
     # #################################################################
     # Start or stop the PHD2 server
     # #################################################################
-    
-    async def start_phd2(self , path = None) -> dict:
+
+    async def start_phd2(self, path=None) -> dict:
         """
-            Start the PHD2 server with the specified path
-            Args :
-                path : str # full path to the PHD2 server executable
-            Returns : {
-                "message": str # None if the operation was successful
-            }
-        """
-        res = {
-            "message": None
+        Start the PHD2 server with the specified path
+        Args :
+            path : str # full path to the PHD2 server executable
+        Returns : {
+            "message": str # None if the operation was successful
         }
+        """
+        res = {"message": None}
         # Check if the instance had already been created
         if self.phd2_instance is not None:
             logger.warning("Phd2 instance had already been created")
             res["message"] = "Phd2 instance had already been created"
             return res
-        
         phd2_path = None
         # judge the system type
         if platform.platform() == "Windows":
@@ -251,32 +252,29 @@ class PHD2ClientWorker(object):
             else:
                 phd2_path = path
         logger.debug("PHD2 executable path : {}".format(phd2_path))
-        
+
         # Check whether the executable is existing
         if not os.path.exists(phd2_path):
             logger.error("PHD2 executable path does not exist: {}".format(phd2_path))
-        
         self.phd2_instance = asyncio.subprocess.create_subprocess_exec(
             program=phd2_path,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
 
         logger.info("PHD2 server started successfully")
         res["message"] = "PHD2 server started successfully"
         return res
-    
+
     async def stop_phd2(self) -> dict:
         """
-            Stop the phd2 server
-            Args : None
-            Returns : {
-                "message" : str
-            }
-        """
-        res = {
-            "message" : None
+        Stop the phd2 server
+        Args : None
+        Returns : {
+            "message" : str
         }
+        """
+        res = {"message": None}
         if self.phd2_instance is None:
             logger.error("No phd2 instance running on this machine")
             res["message"] = "No phd2 instance running on this machine"
@@ -287,72 +285,67 @@ class PHD2ClientWorker(object):
             logger.error("Failed to close phd2 instance : {}".format(e))
             res["message"] = "Failed to close phd2 instance"
             return res
-        
         logger.info("Phd2 server stopped successfully")
         res["message"] = "Phd2 server stopped successfully"
         return res
 
     async def check_started(self) -> dict:
         """
-            Check if the PHD2 server had already started
-            Args : None
-            Returns : {
-                "status" : bool
-            }
-        """
-        return {
-            "status" : check_process_exist("phd2")
+        Check if the PHD2 server had already started
+        Args : None
+        Returns : {
+            "status" : bool
         }
+        """
+        return {"status": check_process_exist("phd2")}
 
-    async def scan_server(self, start_port = 4400 , end_port = 4405) -> dict:
+    async def scan_server(self, start_port=4400, end_port=4405) -> dict:
         """
-            Scan the PHD2 server available in the specified port
-            Args:
-                start_port : int 
-                end_port : int
-            Returns:{
-                "list" : [] # a list of the ports which servers are listening on
-            }
-        """
-        res = {
-            "list" : []
+        Scan the PHD2 server available in the specified port
+        Args:
+            start_port : int
+            end_port : int
+        Returns:{
+            "list" : [] # a list of the ports which servers are listening on
         }
-        if start_port > end_port or not isinstance(start_port,int) or not isinstance(end_port,int):
+        """
+        res = {"list": []}
+        if (
+            start_port > end_port
+            or not isinstance(start_port, int)
+            or not isinstance(end_port, int)
+        ):
             logger.error("Invalid port was specified")
             return res
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        for port in range(start_port,end_port+1):
+        for port in range(start_port, end_port + 1):
             try:
-                sock.bind(("localhost",port))
+                sock.bind(("localhost", port))
                 sock.shutdown(2)
                 res["list"].append(port)
             except socket.error:
                 pass
         logger.debug("Found {} servers".format(len(res["list"])))
         return res
-    
-    async def connect_server(self , host = "localhost" , port = 4400) -> dict:
+
+    async def connect_server(self, host="localhost", port=4400) -> dict:
         """
-            Connect to the PHD2 server on the specified port
-            Args :
-                host : str # hostname of the PHD2 server , default is "localhost"
-                port : int # port number of the server , default is 4400
-            Returns : {
-                "message": str # None if the operation is successful
-            }
-        """
-        resp = {
-            "message" : None
+        Connect to the PHD2 server on the specified port
+        Args :
+            host : str # hostname of the PHD2 server , default is "localhost"
+            port : int # port number of the server , default is 4400
+        Returns : {
+            "message": str # None if the operation is successful
         }
+        """
+        resp = {"message": None}
 
         if self.conn.is_connected():
             resp["message"] = "Server had already connected"
             return resp
-        
-        if not isinstance(host,str) or not isinstance(port,int):
+        if not isinstance(host, str) or not isinstance(port, int):
             resp["message"] = "Invalid host or port were specified"
             return resp
-        
         try:
             self._terminated = False
             self.conn.connect(host, port)
@@ -363,24 +356,22 @@ class PHD2ClientWorker(object):
         except OSError:
             resp["message"] = "Failed to connect to the PHD2 server"
             return resp
-
         resp["message"] = "Connected to PHD2 server successfully"
         return resp
-        
 
     async def disconnect_server(self) -> dict:
         """
-            Disconnects from the PHD2 server
-            Args : None
-            Returns : {
-                "message": str # None if the operation is successful
-            }
-        """
-        res = {
-            "message":None
+        Disconnects from the PHD2 server
+        Args : None
+        Returns : {
+            "message": str # None if the operation is successful
         }
+        """
+        res = {"message": None}
         if not self._is_server_connected:
-            res["message"] = "Server is not connected , please do not execute this operation"
+            res[
+                "message"
+            ] = "Server is not connected , please do not execute this operation"
             return res
         try:
             self.conn.disconnect()
@@ -394,17 +385,17 @@ class PHD2ClientWorker(object):
 
     async def reconnect_server(self) -> dict:
         """
-            Reconnects to the PHD2 server
-            Args : None
-            Returns : {
-                "message": str # None if the operation is successful
-            }
-        """
-        res = {
-            "message":None
+        Reconnects to the PHD2 server
+        Args : None
+        Returns : {
+            "message": str # None if the operation is successful
         }
+        """
+        res = {"message": None}
         if not self._is_server_connected and not self.conn.is_connected():
-            res["message"] = "Server is not connected , please connect before reconnecting"
+            res[
+                "message"
+            ] = "Server is not connected , please connect before reconnecting"
             return res
         # Terminate the background thread first
         self._terminated = True
@@ -423,9 +414,9 @@ class PHD2ClientWorker(object):
 
     def background_task(self) -> None:
         """
-            Background task listen server message | 获取PHD2信息
-            Args : None
-            Returns : None
+        Background task listen server message | 获取PHD2信息
+        Args : None
+        Returns : None
         """
         while not self._terminated:
             line = self.conn.read()
@@ -442,33 +433,30 @@ class PHD2ClientWorker(object):
             else:
                 asyncio.run(self.parser_json(j))
 
-    async def generate_command(self, command : str, params : dict) -> dict:
+    async def generate_command(self, command: str, params: dict) -> dict:
         """
-            Generate command to send to the PHD2 server
-            Args:
-                command : str
-                params : dict
-            Returns : dict
+        Generate command to send to the PHD2 server
+        Args:
+            command : str
+            params : dict
+        Returns : dict
         """
-        res = {
-            "method": command,
-            "id" : 1
-        }
+        res = {"method": command, "id": 1}
         if params is not None:
             if isinstance(params, (list, dict)):
                 res["params"] = params
             else:
-                res["params"] = [ params ]
+                res["params"] = [params]
         return res
 
-    async def send_command(self, command : dict) -> dict:
+    async def send_command(self, command: dict) -> dict:
         """
-            Send command to the PHD2 server
-            Args:
-                command : dict
-            Returns : bool
+        Send command to the PHD2 server
+        Args:
+            command : dict
+        Returns : bool
         """
-        r = json.dumps(command,separators=(',', ':'))
+        r = json.dumps(command, separators=(",", ":"))
         self.conn.send(r + "\r\n")
         # wait for response
         with self.cond:
@@ -477,19 +465,20 @@ class PHD2ClientWorker(object):
             response = self.response
             self.response = None
         if "error" in response:
-            logger.error("Guiding Error : {})".format(response.get('error').get('message')))
+            logger.error(
+                "Guiding Error : {})".format(response.get("error").get("message"))
+            )
         return response
 
-    async def parser_json(self,message) -> None:
+    async def parser_json(self, message) -> None:
         """
-            Parser the JSON message received from the server
-            Args : message : JSON message
-            Returns : None
+        Parser the JSON message received from the server
+        Args : message : JSON message
+        Returns : None
         """
         if message is None:
             return
-
-        event = message.get('Event')
+        event = message.get("Event")
 
         for case in switch(event):
             if case("Version"):
@@ -572,30 +561,26 @@ class PHD2ClientWorker(object):
                 break
             logger.error(f"Unknown event : {event}")
             break
-        
+
     # #################################################################
     # Profiles Manager
     # #################################################################
 
     async def get_profiles(self) -> dict:
         """
-            Get all profiles available on the PHD2 server
-            Args : None
-            Returns : {
-                "list" : list # a list of profiles
-                "message" : str # None if succeeded
-            }
-            NOTE : If no profiles are available , just return an empty list
-        """
-        resp = {
-            "list" : None,
-            "message" : None
+        Get all profiles available on the PHD2 server
+        Args : None
+        Returns : {
+            "list" : list # a list of profiles
+            "message" : str # None if succeeded
         }
+        NOTE : If no profiles are available , just return an empty list
+        """
+        resp = {"list": None, "message": None}
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-
-        command = await self.generate_command("get_profiles",{})
+        command = await self.generate_command("get_profiles", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
@@ -604,9 +589,8 @@ class PHD2ClientWorker(object):
             return resp
         if "error" in res:
             resp["message"] = "Failed to get profiles"
-            resp["error"] = res.get('error')
+            resp["error"] = res.get("error")
             return resp
-
         self._profiles = res.get("result")
         logger.debug("All of the profile : {}".format(self._profiles))
         resp["list"] = self._profiles
@@ -614,126 +598,121 @@ class PHD2ClientWorker(object):
 
     async def get_current_profile(self) -> dict:
         """
-            Get the current profile of the PHD2 server
-            Args : None
-            Returns : {
-                "profile" : dict
-            }
-        """
-        resp = {
-            "message" : None,
-            "profile" : None
+        Get the current profile of the PHD2 server
+        Args : None
+        Returns : {
+            "profile" : dict
         }
-        command = await self.generate_command("get_profile",{})
+        """
+        resp = {"message": None, "profile": None}
+        command = await self.generate_command("get_profile", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-
         if "error" in res:
             resp["error"] = res.get("error")
             resp["message"] = "Failed to get current profile"
             return resp
-
-        self._current_profile["id"] = res.get('result').get('id')
+        self._current_profile["id"] = res.get("result").get("id")
         logger.debug("Current profile id : {}".format(self._current_profile["id"]))
         # Check if the profile list is empty
         if not self._profiles:
             await self.get_profiles()
-        
         for itme in self._profiles:
             if itme["id"] == self._current_profile["id"]:
                 self._current_profile["name"] = itme["name"]
-
         # Get the devices settings in the profile
-        command = await self.generate_command("get_current_equipment",{})
+        command = await self.generate_command("get_current_equipment", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-
         if "error" in res:
             resp["error"] = res.get("error")
             resp["message"] = "Failed to get devices settings in the current profile"
             return resp
         try:
-            self._current_profile["camera"] = res.get("result").get("camera").get("name")
+            self._current_profile["camera"] = (
+                res.get("result").get("camera").get("name")
+            )
             self._current_profile["mount"] = res.get("result").get("mount").get("name")
         except KeyError:
             pass
-
         resp["profile"] = self._current_profile
         return resp
 
-    async def set_profile(self, profile_id : int) -> dict:
+    async def set_profile(self, profile_id: int) -> dict:
         """
-            Set the profile of the PHD2 server
-            Args : 
-                profile_id : int
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Set the profile of the PHD2 server
+        Args :
+            profile_id : int
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
         resp = {
-            "message" : None,
-            "error" : None,
+            "message": None,
+            "error": None,
         }
         if not isinstance(profile_id, int):
             resp["message"] = "Invalid profile_id was specified"
             return resp
-
-        command = await self.generate_command("set_profile",[profile_id])
+        command = await self.generate_command("set_profile", [profile_id])
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to set the profile"
             resp["error"] = res.get("error")
             return resp
-
         self._current_profile["id"] = profile_id
         return resp
 
-    async def generate_profile(self, profile = {}) -> dict:
+    async def generate_profile(self, profile={}) -> dict:
         """
-            Generates a profile for the given parameters
-            Args : 
-                profile : {
-                    "name" : str # Name of the profile
-                    "id" : int # Id of the profile
-                    "camera" : str # Camera type
-                    "mount" : str # Mount type
-                }
-            Returns : {
-                "message" : str # None if succeeded
+        Generates a profile for the given parameters
+        Args :
+            profile : {
+                "name" : str # Name of the profile
+                "id" : int # Id of the profile
+                "camera" : str # Camera type
+                "mount" : str # Mount type
             }
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
         resp = {
-            "message" : None,
-            "error" : None,
+            "message": None,
+            "error": None,
         }
 
-        _name = profile.get('name')
-        _id = profile.get('id')
-        _camera = profile.get('camera')
-        _mount = profile.get('mount')
+        _name = profile.get("name")
+        _id = profile.get("id")
+        _camera = profile.get("camera")
+        _mount = profile.get("mount")
 
         if not _name or not _id or not _camera or not _mount:
-            resp["message"] = "Please provide all of the required parameters for a profile"
+            resp[
+                "message"
+            ] = "Please provide all of the required parameters for a profile"
             return resp
-        
-        if not isinstance(_name , str) or not isinstance(_id,int) or not isinstance(_camera,str) or not isinstance(_mount,str):
+        if (
+            not isinstance(_name, str)
+            or not isinstance(_id, int)
+            or not isinstance(_camera, str)
+            or not isinstance(_mount, str)
+        ):
             resp["message"] = "Invalid profile parameters were specified"
             return resp
-
         """"
             PHD Profile 1
             /auto_exp/exposure_max	1	5000
@@ -822,74 +801,69 @@ class PHD2ClientWorker(object):
 
     async def export_profile(self) -> dict:
         """
-            Export the profile
-            Args : None
-            Returns : {
-                "message" : str
-            }
-        """
-        resp = {
-            "message" : None
+        Export the profile
+        Args : None
+        Returns : {
+            "message" : str
         }
-        
+        """
+        resp = {"message": None}
+
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-
-        command = await self.generate_command("export_config_settings",{})
+        command = await self.generate_command("export_config_settings", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to export the profile"
             resp["error"] = res.get("error")
             return resp
-        
         return resp
 
-    async def delete_profile(self , name : str) -> dict:
+    async def delete_profile(self, name: str) -> dict:
         """
-            Delete the profile by name
-            Args :
-                name : str # the name of the profile
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Delete the profile by name
+        Args :
+            name : str # the name of the profile
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
 
     async def delete_all_profiles(self) -> dict:
         """
-            Delete all of the profiles on PHD2 server
-            Args : None
-            Returns : {
-                "message" : str 
-            }
+        Delete all of the profiles on PHD2 server
+        Args : None
+        Returns : {
+            "message" : str
+        }
         """
 
-    async def copy_profile(self , name : str , dest : str) -> dict:
+    async def copy_profile(self, name: str, dest: str) -> dict:
         """
-            Copy a profile just like a backport
-            Args :
-                name : str # the name of the profile to copy
-                dest : str # the name of the copied file
-            Returns : {
-                "message" : str
-            }
+        Copy a profile just like a backport
+        Args :
+            name : str # the name of the profile to copy
+            dest : str # the name of the copied file
+        Returns : {
+            "message" : str
+        }
         """
 
-    async def rename_profile(self , name : str , newname : str) -> dict:
+    async def rename_profile(self, name: str, newname: str) -> dict:
         """
-            Rename a profile
-            Args :
-                name : str # the old name of the profile
-                newname : str # the new name of the profile
-            Returns : {
-                "message" : str
-            }
+        Rename a profile
+        Args :
+            name : str # the old name of the profile
+            newname : str # the new name of the profile
+        Returns : {
+            "message" : str
+        }
         """
 
     # #################################################################
@@ -898,62 +872,52 @@ class PHD2ClientWorker(object):
 
     async def connect_device(self) -> dict:
         """
-            Connect to the devices in the specified profile
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Connect to the devices in the specified profile
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if self._current_profile is None:
             resp["message"] = "no profile available"
             return resp
-        
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-
-        command = await self.generate_command("set_connected",True)
+        command = await self.generate_command("set_connected", True)
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to connect to all of the devices"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_device_connected = True
         return resp
 
     async def disconnect_device(self) -> dict:
         """
-            Disconnect the connected devices
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Disconnect the connected devices
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("set_connected",False)
+        command = await self.generate_command("set_connected", False)
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to connect to all of the devices"
             resp["error"] = res.get("error")
@@ -963,15 +927,13 @@ class PHD2ClientWorker(object):
 
     async def reconnect_device(self) -> dict:
         """
-            Reconnect the connected devices , just an encapsulation of the connect and disconnect
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Reconnect the connected devices , just an encapsulation of the connect and disconnect
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
@@ -982,32 +944,28 @@ class PHD2ClientWorker(object):
 
     async def check_connected(self) -> dict:
         """
-            Check if all of the devices connected
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-                "status" : bool # True if connected
-            }
-        """
-        resp = {
-            "message" : None
+        Check if all of the devices connected
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
+            "status" : bool # True if connected
         }
+        """
+        resp = {"message": None}
 
-        command = await self.generate_command("get_connected",{})
+        command = await self.generate_command("get_connected", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to check the status of the connection"
             resp["error"] = res.get("error")
             return resp
-        
-        self._is_device_connected = res.get('result')
-        resp["status"] = res.get('result')
+        self._is_device_connected = res.get("result")
+        resp["status"] = res.get("result")
 
         return resp
 
@@ -1029,447 +987,401 @@ class PHD2ClientWorker(object):
 
     async def check_calibration(self) -> dict:
         """
-            Check if the calibration had been completed successfully
-            Args : None
-            Returns : {
-                "status" : bool # True if the calibrated
-            }
-        """
-        resp = {
-            "message" : None,
-            "status" : None
+        Check if the calibration had been completed successfully
+        Args : None
+        Returns : {
+            "status" : bool # True if the calibrated
         }
+        """
+        resp = {"message": None, "status": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("get_calibrated",{})
+        command = await self.generate_command("get_calibrated", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get calibration data"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_calibrated = res.get("result")
         resp["status"] = self._is_calibrated
         return resp
-    
-    async def get_calibration_data(self , device = "Mount") -> dict:
+
+    async def get_calibration_data(self, device="Mount") -> dict:
         """
-            Get the calibration data and return it as a dictionary
-            Args : 
-                device : str # device type , default is "Mount"
-            Returns : {
-                "data" : {
-                    'xAngle': self.xAngle,
-                    'xRate': self.xRate,
-                    'xParity': self.xParity,
-                    'yAngle': self.yAngle,
-                    'yRate': self.yRate,
-                    'yParity': self.yParity,
-                }
+        Get the calibration data and return it as a dictionary
+        Args :
+            device : str # device type , default is "Mount"
+        Returns : {
+            "data" : {
+                'xAngle': self.xAngle,
+                'xRate': self.xRate,
+                'xParity': self.xParity,
+                'yAngle': self.yAngle,
+                'yRate': self.yRate,
+                'yParity': self.yParity,
             }
-        """
-        resp = {
-            "message" : None,
-            "data" : None
         }
+        """
+        resp = {"message": None, "data": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("get_calibration_data",{})
+        command = await self.generate_command("get_calibration_data", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get calibration data"
             resp["error"] = res.get("error")
             return resp
-        
         self._calibrated_data = res.get("result")
         resp["data"] = self._calibrated_data
         return resp
 
     async def clear_calibration_data(self) -> dict:
         """
-            Clear calibration data and need a calibration before restart guiding
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Clear calibration data and need a calibration before restart guiding
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("clear_calibration",{})
+        command = await self.generate_command("clear_calibration", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to clear calibration data"
             resp["error"] = res.get("error")
             return resp
-        
         self._calibrated_data = {}
         self._is_calibrated = False
         return resp
 
     async def flip_calibration_data(self) -> dict:
         """
-            Flip the calibration data usually for transmit flipper
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Flip the calibration data usually for transmit flipper
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("clear_calibration",{})
+        command = await self.generate_command("clear_calibration", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to flip calibration data"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_calibration_flipped = True
         return resp
 
     # #################################################################
-    # Guiding 
+    # Guiding
     # #################################################################
-    
-    async def find_star(self , roi = []) -> dict:
+
+    async def find_star(self, roi=[]) -> dict:
         """
-            Automatically find a star on the screen
-            Args :
-                roi : [] # camera frame list
-            Returns : {
-                "message" : str # None if succeeded
-                "x" : int # x position of the found star
-                "y" : int # y position of the found star
-            }
-        """
-        resp = {
-            "message" : None,
-            "x" : None,
-            "y" : None
+        Automatically find a star on the screen
+        Args :
+            roi : [] # camera frame list
+        Returns : {
+            "message" : str # None if succeeded
+            "x" : int # x position of the found star
+            "y" : int # y position of the found star
         }
+        """
+        resp = {"message": None, "x": None, "y": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("find_star",{})
+        command = await self.generate_command("find_star", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to find a star for guiding"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_star_found = True
         self._star_position = res.get("result")
         resp["x"] = self._star_position[0]
         resp["y"] = self._star_position[1]
         return resp
-        
-    async def start_guiding(self , pixel : float , time : int , timeout : int , recalibration : bool) -> dict:
+
+    async def start_guiding(
+        self, pixel: float, time: int, timeout: int, recalibration: bool
+    ) -> dict:
         """
-            Start guiding with the given parameters
-            Args :
-                pixel : float # maximum guide distance for guiding to be considered stable or "in-range"
-                time : int # minimum time to be in-range before considering guiding to be stable
-                timeout : int # time limit before settling is considered to have failed
-                recalibration : bool # whether to restart the calibration before guiding
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Start guiding with the given parameters
+        Args :
+            pixel : float # maximum guide distance for guiding to be considered stable or "in-range"
+            time : int # minimum time to be in-range before considering guiding to be stable
+            timeout : int # time limit before settling is considered to have failed
+            recalibration : bool # whether to restart the calibration before guiding
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
         # Check if the parameters are valid
-        if not isinstance(pixel,float) or not isinstance(time,int) or not isinstance(timeout,int) or not isinstance(recalibration,bool):
+        if (
+            not isinstance(pixel, float)
+            or not isinstance(time, int)
+            or not isinstance(timeout, int)
+            or not isinstance(recalibration, bool)
+        ):
             resp["message"] = "Invalid guiding parameters was specified"
             return resp
-        
-        settle = {
-            "pixels" : pixel,
-            "time" : time,
-            "timeout" : timeout
-        }
-        
-        command = await self.generate_command("guide",{"settle" : settle, "recalibrate" : recalibration})
+        settle = {"pixels": pixel, "time": time, "timeout": timeout}
+
+        command = await self.generate_command(
+            "guide", {"settle": settle, "recalibrate": recalibration}
+        )
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to start guiding"
             resp["error"] = res.get("error")
             return resp
-        
         return resp
 
     async def stop_guiding(self) -> dict:
         """
-            Stop guiding operation
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Stop guiding operation
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        command = await self.generate_command("set_paused",[True])
+        command = await self.generate_command("set_paused", [True])
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to start guiding"
             resp["error"] = res.get("error")
             return resp
-    
         return resp
 
     async def pause_guiding(self) -> dict:
         """
-            Pause guiding operation but not stop looping
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Pause guiding operation but not stop looping
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
 
     async def resume_guiding(self) -> dict:
         """
-            Resume the guiding operation just be symmetrical with the above function
-            Args : None
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Resume the guiding operation just be symmetrical with the above function
+        Args : None
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
 
-    async def get_guiding_algorithm(self , axis : str , name = None) -> dict:
+    async def get_guiding_algorithm(self, axis: str, name=None) -> dict:
         """
-            Get the algorithm of the specified axis , if the name is not None
-            Args :
-                axis : str # name of the axis , "ra","x","dec", or "y"
-                name : str # if not None , return a accurate value
-            Returns : {
-                "list" : list # a list of guide algorithm param names (strings)
-                "value" : float # the value of the named parameter
-            }
+        Get the algorithm of the specified axis , if the name is not None
+        Args :
+            axis : str # name of the axis , "ra","x","dec", or "y"
+            name : str # if not None , return a accurate value
+        Returns : {
+            "list" : list # a list of guide algorithm param names (strings)
+            "value" : float # the value of the named parameter
+        }
         """
 
-    async def set_guiding_algorithm(self, axis : str , name : str , value : float) -> dict:
+    async def set_guiding_algorithm(self, axis: str, name: str, value: float) -> dict:
         """
-            Set the algorithm of the specified axis
-            URL : chat.forchange.cn
-            Args :
-                axis : str # "ra","x","dec", or "y"
-                name : str # the name of the parameter
-                value : float
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Set the algorithm of the specified axis
+        URL : chat.forchange.cn
+        Args :
+            axis : str # "ra","x","dec", or "y"
+            name : str # the name of the parameter
+            value : float
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
         resp = {
-            "message" : None,
+            "message": None,
         }
 
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        if not isinstance(axis,str) or not axis in ["ra","x","dec","y"]:
+        if not isinstance(axis, str) or not axis in ["ra", "x", "dec", "y"]:
             resp["message"] = "Invalid axis specified"
             return resp
-        if not isinstance(name,str) or not name in ["ra","x","dec","y"]:
+        if not isinstance(name, str) or not name in ["ra", "x", "dec", "y"]:
             resp["message"] = "Invalid axis specified"
             return resp
-                
-        command = await self.generate_command("set_dec_guide_mode",{})
+        command = await self.generate_command("set_dec_guide_mode", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to set the guiding mode of the DEC axis"
             resp["error"] = res.get("error")
             return resp
-        
         return resp
 
     async def get_dec_guiding_mode(self) -> dict:
         """
-            Get the guiding mode of the DEC axis
-            Args : None
-            Returns : {
-                "mode" : str # "Off"/"Auto"/"North"/"South"
-            }
-        """
-        resp = {
-            "message" : None,
-            "mode" : None
+        Get the guiding mode of the DEC axis
+        Args : None
+        Returns : {
+            "mode" : str # "Off"/"Auto"/"North"/"South"
         }
+        """
+        resp = {"message": None, "mode": None}
 
         if not self._is_device_connected:
             resp["message"] = "get_dec_guide_mode"
             return resp
-                
-        command = await self.generate_command("get_dec_guide_mode",{})
+        command = await self.generate_command("get_dec_guide_mode", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the guiding mode of the DEC axis"
             resp["error"] = res.get("error")
             return resp
-        
         self._dec_guiding_mode = res.get("result")
         resp["mode"] = self._dec_guiding_mode
         return resp
 
-    async def set_dec_guiding_mode(self, mode : str) -> dict:
+    async def set_dec_guiding_mode(self, mode: str) -> dict:
         """
-            Set the guiding mode of the DEC axis
-            Args : 
-                mode : str # "Off"/"Auto"/"North"/"South"
-            Returns : {
-                "message" : str # None if succeeded
-            }
+        Set the guiding mode of the DEC axis
+        Args :
+            mode : str # "Off"/"Auto"/"North"/"South"
+        Returns : {
+            "message" : str # None if succeeded
+        }
         """
         resp = {
-            "message" : None,
+            "message": None,
         }
 
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        if not isinstance(mode,str) or not mode in ["Off","Auto","North","South"]:
+        if not isinstance(mode, str) or not mode in ["Off", "Auto", "North", "South"]:
             resp["message"] = "Invalid mode specified"
             return resp
-                
-        command = await self.generate_command("set_dec_guide_mode",{"mode" : mode})
+        command = await self.generate_command("set_dec_guide_mode", {"mode": mode})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to set the guiding mode of the DEC axis"
             resp["error"] = res.get("error")
             return resp
-        
         return resp
 
     # #################################################################
     # Dither
     # #################################################################
 
-    async def dither(self , pixel : float , time : int , timeout : int , raonly : bool , amount : int) -> dict:
+    async def dither(
+        self, pixel: float, time: int, timeout: int, raonly: bool, amount: int
+    ) -> dict:
         """
-            Dither
-            Args : 
-                pixel : float
-                time : int
-                timeout : int
-                raonly : bool
-                amount : int
-            Returns : {
-                "message" : str # None if succeeded
-            }
-            NOTE : After the jitter starts, it takes a certain time to reach stability, so the detection result needs to be returned to the client
-        """
-        resp = {
-            "message" : None
+        Dither
+        Args :
+            pixel : float
+            time : int
+            timeout : int
+            raonly : bool
+            amount : int
+        Returns : {
+            "message" : str # None if succeeded
         }
+        NOTE : After the jitter starts, it takes a certain time to reach stability, so the detection result needs to be returned to the client
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
         # Check if the parameters are valid
-        if not isinstance(pixel,float) or not isinstance(time,int) or not isinstance(timeout,int) or not isinstance(raonly,bool) or not isinstance(amount,int):
+        if (
+            not isinstance(pixel, float)
+            or not isinstance(time, int)
+            or not isinstance(timeout, int)
+            or not isinstance(raonly, bool)
+            or not isinstance(amount, int)
+        ):
             resp["message"] = "Invalid dithering parameters was specified"
             return resp
-        
-        settle = {
-            "pixels" : pixel,
-            "time" : time,
-            "timeout" : timeout
-        }
-        
-        command = await self.generate_command("dither",{"settle" : settle, "raOnly" : raonly , "amount" : amount})
+        settle = {"pixels": pixel, "time": time, "timeout": timeout}
+
+        command = await self.generate_command(
+            "dither", {"settle": settle, "raOnly": raonly, "amount": amount}
+        )
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to start dithering"
             resp["error"] = res.get("error")
             return resp
-        
         return resp
 
     # #################################################################
@@ -1478,80 +1390,70 @@ class PHD2ClientWorker(object):
 
     async def get_camera_frame_size(self) -> dict:
         """
-            Get the frame size of the camera
-            Args : None
-            Returns : {
-                "height" : int # height of the camera frame
-                "width" : int # width of the camera frame
-            }
-        """
-        resp = {
-            "message" : None,
-            "height" : None,
-            "width" : None
+        Get the frame size of the camera
+        Args : None
+        Returns : {
+            "height" : int # height of the camera frame
+            "width" : int # width of the camera frame
         }
+        """
+        resp = {"message": None, "height": None, "width": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-                
-        command = await self.generate_command("get_camera_frame_size",{})
+        command = await self.generate_command("get_camera_frame_size", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get frame size of the camemra"
             resp["error"] = res.get("error")
             return resp
-
-        self._frame_width , self._frame_height = res.get('result')
+        self._frame_width, self._frame_height = res.get("result")
         resp["height"] = self._frame_height
         resp["width"] = self._frame_width
         return resp
 
     async def get_cooler_status(self) -> dict:
         """
-            Get the cooler status of the camera
-            Args : None
-            Returns : {
-                "temperature": sensor temperature in degrees C (number), 
-                "coolerOn": boolean, 
-                "setpoint": cooler set-point temperature (number, degrees C), 
-                "power": cooler power (number, percent)
-            }
-            NOTE : This function needs camera supported
+        Get the cooler status of the camera
+        Args : None
+        Returns : {
+            "temperature": sensor temperature in degrees C (number),
+            "coolerOn": boolean,
+            "setpoint": cooler set-point temperature (number, degrees C),
+            "power": cooler power (number, percent)
+        }
+        NOTE : This function needs camera supported
         """
         resp = {
-            "message" : None,
-            "temperature" : None,
-            "cooler_on" : None,
-            "setpoint" : None,
-            "power" : None,
+            "message": None,
+            "temperature": None,
+            "cooler_on": None,
+            "setpoint": None,
+            "power": None,
         }
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-                
-        command = await self.generate_command("get_cooler_status",{})
+        command = await self.generate_command("get_cooler_status", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get cooling status of the camemra"
             resp["error"] = res.get("error")
             return resp
-
-        self._current_temperature = res.get('result').get("temperature")
-        self._is_cooling = res.get('result').get("coolerOn")
-        self._target_temperature = res.get('result').get("setpoint")
-        self._coolig_power = res.get('result').get("power")
+        self._current_temperature = res.get("result").get("temperature")
+        self._is_cooling = res.get("result").get("coolerOn")
+        self._target_temperature = res.get("result").get("setpoint")
+        self._coolig_power = res.get("result").get("power")
         resp["temperature"] = self._current_temperature
         resp["cooler_on"] = self._is_cooling
         resp["setpoint"] = self._target_temperature
@@ -1560,106 +1462,90 @@ class PHD2ClientWorker(object):
 
     async def get_camera_temperature(self) -> dict:
         """
-            Get the current temperature of the camera
-            Args : None
-            Returns : {
-                "temperature" : float # sensor temperature in degrees C
-            }
-        """
-        resp = {
-            "message" : None,
-            "temperature" : None
+        Get the current temperature of the camera
+        Args : None
+        Returns : {
+            "temperature" : float # sensor temperature in degrees C
         }
+        """
+        resp = {"message": None, "temperature": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-                
-        command = await self.generate_command("get_ccd_temperature",{})
+        command = await self.generate_command("get_ccd_temperature", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get temperature of the camemra"
             resp["error"] = res.get("error")
             return resp
-
-        temperature = res.get('result').get("temperature")
+        temperature = res.get("result").get("temperature")
         self._current_temperature = temperature
         resp["temperature"] = temperature
         return resp
 
     async def get_exposure(self) -> dict:
         """
-            Get the exposure of the camera
-            Args : None
-            Returns : {
-                "exposure" : float # in seconds
-            }
-        """
-        resp = {
-            "message" : None,
-            "exposure" : None
+        Get the exposure of the camera
+        Args : None
+        Returns : {
+            "exposure" : float # in seconds
         }
+        """
+        resp = {"message": None, "exposure": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-                
-        command = await self.generate_command("get_exposure",{})
+        command = await self.generate_command("get_exposure", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get exposure of the camemra"
             resp["error"] = res.get("error")
             return resp
-
-        exposure = res.get('result') / 1000
+        exposure = res.get("result") / 1000
         self._exposure = exposure
         resp["exposure"] = exposure
         return resp
 
-    async def set_exposure(self, exposure : float) -> dict:
+    async def set_exposure(self, exposure: float) -> dict:
         """
-            Set the exposure value of the camera
-            Args :
-                exposure : float # in seconds
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Set the exposure value of the camera
+        Args :
+            exposure : float # in seconds
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        if not isinstance(exposure , float) or not 0 < exposure < 30:
+        if not isinstance(exposure, float) or not 0 < exposure < 30:
             logger.error("Invalid exposure value specified")
             resp["message"] = "Invalid exposure value specified"
             return resp
-
-        command = await self.generate_command("set_exposure",{"exposure":int(exposure * 1000)})
+        command = await self.generate_command(
+            "set_exposure", {"exposure": int(exposure * 1000)}
+        )
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to set exposure of the camemra"
             resp["error"] = res.get("error")
             return resp
-
         self._exposure = exposure
         return resp
 
@@ -1669,39 +1555,37 @@ class PHD2ClientWorker(object):
 
     async def get_image(self) -> dict:
         """
-            Get the current image of the guiding
-            Args : None
-            Returns : {
-                "frame" : int # frame number
-                "width" : int # width in pixels
-                "height" : int # height in pixels
-                "image" : str # a base64 encoded image
-                "star_position" : list # The position of the star is locked , [x,y]
-            }
+        Get the current image of the guiding
+        Args : None
+        Returns : {
+            "frame" : int # frame number
+            "width" : int # width in pixels
+            "height" : int # height in pixels
+            "image" : str # a base64 encoded image
+            "star_position" : list # The position of the star is locked , [x,y]
+        }
         """
         resp = {
-            "message" : None,
-            "image" : None,
-            "width" : None,
-            "height" : None,
-            "star_position" : None
+            "message": None,
+            "image": None,
+            "width": None,
+            "height": None,
+            "star_position": None,
         }
 
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-
-        command = await self.generate_command("get_star_image",{})
+        command = await self.generate_command("get_star_image", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the current image"
-            resp["error"] = res.get('error')
+            resp["error"] = res.get("error")
             return resp
         resp["height"] = res.get("height")
         resp["width"] = res.get("width")
@@ -1710,11 +1594,11 @@ class PHD2ClientWorker(object):
 
     async def save_image(self) -> dict:
         """
-            Save the image to the specified folder
-            Args : None
-            Returns : {
-                "path" : str # the full path to the image
-            }
+        Save the image to the specified folder
+        Args : None
+        Returns : {
+            "path" : str # the full path to the image
+        }
         """
 
     # #################################################################
@@ -1723,227 +1607,208 @@ class PHD2ClientWorker(object):
 
     async def check_modified(self) -> dict:
         """
-            Check if the PHD2 server been modified by LightAPT
-            Args : None
-            Returns : {
-                "status" : bool # true if the server was modified
-            }
-        """
-        resp = {
-            "message" : None,
-            "status" : None
+        Check if the PHD2 server been modified by LightAPT
+        Args : None
+        Returns : {
+            "status" : bool # true if the server was modified
         }
+        """
+        resp = {"message": None, "status": None}
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-                
-        command = await self.generate_command("lightapt_modify_response",{})
+        command = await self.generate_command("lightapt_modify_response", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to check if the server is modified"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_server_modified = res.get("result").get("modified")
         resp["status"] = self._is_server_modified
         return resp
 
     async def get_darklib_path(self) -> dict:
         """
-            Get the full path to the darklib directory
-            Args : None
-            Returns : {
-                "path" : str # the full path to the darklib directory
-            }
-        """
-        resp = {
-            "message" : None,
-            "path" : None
+        Get the full path to the darklib directory
+        Args : None
+        Returns : {
+            "path" : str # the full path to the darklib directory
         }
+        """
+        resp = {"message": None, "path": None}
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-                
-        command = await self.generate_command("get_darklib_path",{})
+        command = await self.generate_command("get_darklib_path", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the dark library path"
             resp["error"] = res.get("error")
             return resp
-        
         self._darklib_path = res.get("result").get("path")
         resp["path"] = self._darklib_path
         return resp
 
-    async def get_darklib_name(self , profile_id : int) -> dict:
+    async def get_darklib_name(self, profile_id: int) -> dict:
         """
-            Get the name of the darklib profile for the given profile_id
-            Args :
-                profile_id : int
-            Returns : {
-                "name" : str # the name of the darklib
-            }
+        Get the name of the darklib profile for the given profile_id
+        Args :
+            profile_id : int
+        Returns : {
+            "name" : str # the name of the darklib
+        }
         """
 
     async def check_darklib_loaded(self) -> dict:
         """
-            Check if the dark library is loaded
-            Args : None
-            Returns : {
-                "status" : bool # True if the dark library is loaded
-            }
-        """
-        resp = {
-            "message" : None,
-            "status" : None
+        Check if the dark library is loaded
+        Args : None
+        Returns : {
+            "status" : bool # True if the dark library is loaded
         }
+        """
+        resp = {"message": None, "status": None}
 
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-                
-        command = await self.generate_command("is_darklib_loaded",{})
+        command = await self.generate_command("is_darklib_loaded", {})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the dark library path"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_darklib_loaded = res.get("result").get("loaded")
         resp["status"] = self._is_darklib_loaded
         return resp
 
-    async def create_darklib(self , name : str , max_exposure : float , min_exposure : float,
-                             count : int , rebuild : bool , continued : bool) -> dict:
+    async def create_darklib(
+        self,
+        name: str,
+        max_exposure: float,
+        min_exposure: float,
+        count: int,
+        rebuild: bool,
+        continued: bool,
+    ) -> dict:
         """
-            Create the dark frame library
-            Args :
-                name : str # the name of the darklib to save
-                max_exposure : float # the max value of the exposure time
-                min_exposure : float # the min value of the exposure time
-                count : int # the number of the images
-                rebuild : bool # whether to rebuild the dark lib
-                continued : bool # whether to continue to improve the old lib
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None
+        Create the dark frame library
+        Args :
+            name : str # the name of the darklib to save
+            max_exposure : float # the max value of the exposure time
+            min_exposure : float # the min value of the exposure time
+            count : int # the number of the images
+            rebuild : bool # whether to rebuild the dark lib
+            continued : bool # whether to continue to improve the old lib
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None}
         if not self._is_device_connected:
             resp["message"] = "Device is not connected"
             return resp
-        
-        command = await self.generate_command("create_darklib",{
-            "name" : name,
-            "max_exposure" : max_exposure * 1000,
-            "min_exposure" : min_exposure * 1000,
-            "count" : count,
-            "rebuild" : int(rebuild),
-            "continue" : int(continued)
-        })
+        command = await self.generate_command(
+            "create_darklib",
+            {
+                "name": name,
+                "max_exposure": max_exposure * 1000,
+                "min_exposure": min_exposure * 1000,
+                "count": count,
+                "rebuild": int(rebuild),
+                "continue": int(continued),
+            },
+        )
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the dark library path"
             resp["error"] = res.get("error")
             return resp
-        
         self._is_darklib_loaded = res.get("result").get("loaded")
         resp["status"] = self._is_darklib_loaded
         return resp
 
-    async def create_profile(self , name : str) -> dict:
+    async def create_profile(self, name: str) -> dict:
         """
-            Create a new profile
-            Args :
-                path : str # the full path to the profile
-            Returns : {
-                "message" : str # None if succeeded
-            }
-        """
-        resp = {
-            "message" : None,
-            "status" : None
+        Create a new profile
+        Args :
+            path : str # the full path to the profile
+        Returns : {
+            "message" : str # None if succeeded
         }
+        """
+        resp = {"message": None, "status": None}
 
         if not self._is_server_connected:
             resp["message"] = "Server is not connected"
             return resp
-                
-        command = await self.generate_command("create_profile",{"name":name})
+        command = await self.generate_command("create_profile", {"name": name})
         try:
             res = await self.send_command(command)
         except socket.error as e:
             resp["message"] = "Send command failed"
             resp["error"] = e
             return resp
-        
         if "error" in res:
             resp["message"] = "Failed to get the dark library path"
             resp["error"] = res.get("error")
             return resp
-        
         resp["status"] = res.get("result").get("status")
-        
+
         return resp
 
     # #################################################################
     # Server Listener Functions
     # #################################################################
 
-    async def __version(self,message : dict) -> None:
+    async def __version(self, message: dict) -> None:
         """
-            Get PHD2 version
-            Args : None
-            Returns : None
+        Get PHD2 version
+        Args : None
+        Returns : None
         """
         self._host = message.get("Host")
         self._phd2version = message.get("PHDVersion")
         self._subversion = message.get("PHDSubver")
         self._msgversion = message.get("MsgVersion")
 
-    async def __lock_position_set(self, message : dict) -> None:
+    async def __lock_position_set(self, message: dict) -> None:
         """
-            Get lock position set
-            Args:
-                message : dict
-            Returns : None
+        Get lock position set
+        Args:
+            message : dict
+        Returns : None
         """
         self._star_position[0] = message.get("X")
         self._star_position[1] = message.get("Y")
         self._is_star_locked = True
 
-    async def __calibrating(self,message : dict) -> None:
+    async def __calibrating(self, message: dict) -> None:
         """
-            Get calibrating state
-            Args:
-                message : dict
-            Returns : None
+        Get calibrating state
+        Args:
+            message : dict
+        Returns : None
         """
         self._calibrated_status["direction"] = message.get("dir")
         self._calibrated_status["distance"] = message.get("dist")
@@ -1953,61 +1818,61 @@ class PHD2ClientWorker(object):
         self._calibrated_status["stop"] = message.get("step")
         self._calibrated_status["state"] = message.get("State")
 
-    async def __calibration_completed(self,message : dict) -> None:
+    async def __calibration_completed(self, message: dict) -> None:
         """
-            Get calibration completed state
-            Args:
-                message : dict
-            Returns : None
+        Get calibration completed state
+        Args:
+            message : dict
+        Returns : None
         """
         self._mount = message.get("Mount")
 
-    async def __star_selected(self,message : dict) -> None:
+    async def __star_selected(self, message: dict) -> None:
         """
-            Get star selected state
-            Args:
-                message : dict
-            Returns : None
+        Get star selected state
+        Args:
+            message : dict
+        Returns : None
         """
         self._star_position[0] = message.get("X")
         self._star_position[1] = message.get("Y")
         self._is_star_selected = True
-    
+
     async def __start_guiding(self) -> None:
         """
-            Get start guiding state
-            Args:
-                message : dict
-            Returns : None
+        Get start guiding state
+        Args:
+            message : dict
+        Returns : None
         """
         self._is_guiding = True
 
     async def __paused(self) -> None:
         """
-            Get paused state
-            Args : None
-            Returns : None
+        Get paused state
+        Args : None
+        Returns : None
         """
         self._is_guiding = False
         self._is_calibrating = False
 
-    async def __start_calibration(self, message : dict) -> None:
+    async def __start_calibration(self, message: dict) -> None:
         """
-            Get start calibration state
-            Args:
-                message : dict
-            Returns : None
+        Get start calibration state
+        Args:
+            message : dict
+        Returns : None
         """
         self._mount = message.get("Mount")
         self._is_calibrating = True
         self._is_guiding = False
 
-    async def __app_state(self, message : dict) -> None:
+    async def __app_state(self, message: dict) -> None:
         """
-            Get app state
-            Args:
-                message : dict
-            Returns : None
+        Get app state
+        Args:
+            message : dict
+        Returns : None
         """
         state = message.get("State")
         for case in switch(state):
@@ -2044,127 +1909,129 @@ class PHD2ClientWorker(object):
                 self._is_looping = True
                 break
 
-    async def __calibration_failed(self, message : dict) -> None:
+    async def __calibration_failed(self, message: dict) -> None:
         """
-            Get calibration failed state
-            Args:
-                message : dict
-            Returns : None
+        Get calibration failed state
+        Args:
+            message : dict
+        Returns : None
         """
         self._calibrated_error = message.get("Reason")
         self._is_calibrating = False
         self._is_calibrated = False
 
-    async def __calibration_data_flipped(self, message : dict) -> None:
+    async def __calibration_data_flipped(self, message: dict) -> None:
         """
-            Get calibration data flipping state
-            Args:
-                message : dict
-            Returns : None
+        Get calibration data flipping state
+        Args:
+            message : dict
+        Returns : None
         """
         self._is_calibration_flipped = True
 
     async def __lock_position_shift_limit_reached(self) -> None:
         """
-            Get lock position shift limit reached state
-            Args : None
-            Returns : None
+        Get lock position shift limit reached state
+        Args : None
+        Returns : None
         """
         logger.warning("Star locked position reached the edge of the camera frame")
 
-    async def __looping_exposures(self, message : dict) -> None:
+    async def __looping_exposures(self, message: dict) -> None:
         """
-            Get looping exposures state
-            Args:
-                message : dict
-            Returns : None
+        Get looping exposures state
+        Args:
+            message : dict
+        Returns : None
         """
         self._is_looping = True
 
     async def __looping_exposures_stopped(self) -> None:
         """
-            Get looping exposures stopped state
-            Args : None
-            Returns : None
+        Get looping exposures stopped state
+        Args : None
+        Returns : None
         """
         self._is_looping = False
 
     async def __settle_begin(self) -> None:
         """
-            Get settle begin state
-            Args : None
-            Returns : None
+        Get settle begin state
+        Args : None
+        Returns : None
         """
         self._is_settling = True
 
-    async def __settling(self , message : dict) -> None:
+    async def __settling(self, message: dict) -> None:
         """
-            Get settling state
-            Args:
-                message : dict
-            Returns : None
+        Get settling state
+        Args:
+            message : dict
+        Returns : None
         """
         self._settle_status["distance"] = message.get("Distance")
         self._settle_status["time"] = message.get("SettleTime")
         self._settle_status["locked"] = message.get("StarLocked")
         self._is_settling = True
 
-    async def __settle_done(self, message : dict) -> None:
+    async def __settle_done(self, message: dict) -> None:
         """
-            Get settle done state
-            Args:
-                message : dict
-            Returns : None
+        Get settle done state
+        Args:
+            message : dict
+        Returns : None
         """
         status = message.get("Status")
         if status == 0:
             logger.info("Settle succeeded")
             self._is_settled = True
         else:
-            self._settle_error = message.get('Error')
+            self._settle_error = message.get("Error")
             logger.info(f"Settle failed , error : {message.get('Error')}")
             self._is_settled = False
         self._is_settling = False
 
-    async def __star_lost(self, message : dict) -> None:
+    async def __star_lost(self, message: dict) -> None:
         """
-            Get star lost state
-            Args:
-                message : dict
-            Returns : None
+        Get star lost state
+        Args:
+            message : dict
+        Returns : None
         """
-        self._starlost_status["snr"] = message.get('SNR')
-        self._starlost_status["star_mass"] = message.get('StarMass')
-        self._starlost_status["avg_dist"] = message.get('AvgDist')
+        self._starlost_status["snr"] = message.get("SNR")
+        self._starlost_status["star_mass"] = message.get("StarMass")
+        self._starlost_status["avg_dist"] = message.get("AvgDist")
         self._starlost_error = message.get("Status")
-        logger.error(f"Star Lost , SNR : {self._starlost_status['snr']} , StarMass : {self._starlost_status['star_mass']} , AvgDist : {self._starlost_status['avg_dist']}")
+        logger.error(
+            f"Star Lost , SNR : {self._starlost_status['snr']} , StarMass : {self._starlost_status['star_mass']} , AvgDist : {self._starlost_status['avg_dist']}"
+        )
         self._is_guiding = False
         self._is_calibrating = False
 
     async def __guiding_stopped(self) -> None:
         """
-            Get guiding stopped state
-            Args : None
-            Returns : None
+        Get guiding stopped state
+        Args : None
+        Returns : None
         """
         self._is_guiding = False
         logger.info("Guiding Stopped")
 
     async def __resumed(self) -> None:
         """
-            Get guiding resumed state
-            Args : None
-            Returns : None
+        Get guiding resumed state
+        Args : None
+        Returns : None
         """
         logger.info("Guiding Resumed")
         self._is_guiding = True
 
-    async def __guide_step(self , message : dict) -> None:
+    async def __guide_step(self, message: dict) -> None:
         """
-            Get guide step state
-            Args:
-                message : dict
-            Returns : None
+        Get guide step state
+        Args:
+            message : dict
+        Returns : None
         """
         self._mount = message.get("Mount")
         logger.debug("Guide step mount : {}".format(self._mount))
@@ -2172,7 +2039,9 @@ class PHD2ClientWorker(object):
         logger.debug("Guide step error : {}".format(self._guiding_error))
 
         self._guiding_status["avg_dist"] = message.get("AvgDist")
-        logger.debug("Guide step average distance : {}".format(self._guiding_status["avg_dist"]))
+        logger.debug(
+            "Guide step average distance : {}".format(self._guiding_status["avg_dist"])
+        )
 
         self._guiding_status["dx"] = message.get("dx")
         logger.debug("Guide step dx : {}".format(self._guiding_status["dx"]))
@@ -2180,72 +2049,98 @@ class PHD2ClientWorker(object):
         logger.debug("Guide step dy : {}".format(self._guiding_status["dy"]))
 
         self._guiding_status["ra_raw_distance"] = message.get("RADistanceRaw")
-        logger.debug("Guide step RADistanceRaw : {}".format(self._guiding_status["ra_raw_distance"]))
+        logger.debug(
+            "Guide step RADistanceRaw : {}".format(
+                self._guiding_status["ra_raw_distance"]
+            )
+        )
         self._guiding_status["dec_raw_distance"] = message.get("DECDistanceRaw")
-        logger.debug("Guide step DECDistanceRaw : {}".format(self._guiding_status["dec_raw_distance"]))
+        logger.debug(
+            "Guide step DECDistanceRaw : {}".format(
+                self._guiding_status["dec_raw_distance"]
+            )
+        )
 
         self._guiding_status["ra_distance"] = message.get("RADistanceGuide")
-        logger.debug("Guide step RADistanceGuide : {}".format(self._guiding_status["ra_distance"]))
+        logger.debug(
+            "Guide step RADistanceGuide : {}".format(
+                self._guiding_status["ra_distance"]
+            )
+        )
         self._guiding_status["dec_distance"] = message.get("DECDistanceGuide")
-        logger.debug("Guide step DECDistanceGuide : {}".format(self._guiding_status["dec_distance"]))
+        logger.debug(
+            "Guide step DECDistanceGuide : {}".format(
+                self._guiding_status["dec_distance"]
+            )
+        )
 
         self._guiding_status["ra_duration"] = message.get("RADuration")
-        logger.debug("Guide step RADuration : {}".format(self._guiding_status["ra_duration"]))
+        logger.debug(
+            "Guide step RADuration : {}".format(self._guiding_status["ra_duration"])
+        )
         self._guiding_status["dec_duration"] = message.get("DECDuration")
-        logger.debug("Guide step DECDuration : {}".format(self._guiding_status["dec_duration"]))
+        logger.debug(
+            "Guide step DECDuration : {}".format(self._guiding_status["dec_duration"])
+        )
 
         self._guiding_status["ra_direction"] = message.get("RADirection")
-        logger.debug("Guide step RADirection : {}".format(self._guiding_status["ra_direction"]))
-        self._guiding_status["dec_direction"] = message.get("DECDirection")    
-        logger.debug("Guide step DECDirection : {}".format(self._guiding_status["dec_direction"]))
+        logger.debug(
+            "Guide step RADirection : {}".format(self._guiding_status["ra_direction"])
+        )
+        self._guiding_status["dec_direction"] = message.get("DECDirection")
+        logger.debug(
+            "Guide step DECDirection : {}".format(self._guiding_status["dec_direction"])
+        )
 
         self._guiding_status["snr"] = message.get("SNR")
         logger.debug("Guide step SNR : {}".format(self._guiding_status["snr"]))
         self._guiding_status["starmass"] = message.get("StarMass")
-        logger.debug("Guide step StarMass : {}".format(self._guiding_status["starmass"]))
+        logger.debug(
+            "Guide step StarMass : {}".format(self._guiding_status["starmass"])
+        )
         self._guiding_status["hfd"] = message.get("HFD")
         logger.debug("Guide step HFD : {}".format(self._guiding_status["hfd"]))
-        
-    async def __guiding_dithered(self, message : dict) -> None:
+
+    async def __guiding_dithered(self, message: dict) -> None:
         """
-            Get guiding dithered state
-            Args:
-                message : dict
-            Returns : None
+        Get guiding dithered state
+        Args:
+            message : dict
+        Returns : None
         """
         self._dither_dx = message.get("dx")
         self._dither_dy = message.get("dy")
 
     async def __lock_position_lost(self) -> None:
         """
-            Get lock position lost state
-            Args : None
-            Returns : None
+        Get lock position lost state
+        Args : None
+        Returns : None
         """
         self._is_star_locked = True
         logger.error("Star Lock Position Lost")
 
-    async def __alert(self, message : dict) -> None:
+    async def __alert(self, message: dict) -> None:
         """
-            Get alert state
-            Args:
-                message : dict
-            Returns : None
+        Get alert state
+        Args:
+            message : dict
+        Returns : None
         """
-        self._last_error = message.get('Msg')
+        self._last_error = message.get("Msg")
         logger.error("Alert : {}".format(self._last_error))
 
-    async def __guide_param_change(self, message : dict) -> None:
+    async def __guide_param_change(self, message: dict) -> None:
         """
-            Get guide param change state
-            Args:
-                message : dict
-            Returns : None
+        Get guide param change state
+        Args:
+            message : dict
+        Returns : None
         """
-    
+
     async def __configuration_change(self) -> None:
         """
-            Get configuration change state
-            Args : None
-            Returns : None
+        Get configuration change state
+        Args : None
+        Returns : None
         """
