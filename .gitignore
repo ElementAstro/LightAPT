@@ -19,6 +19,8 @@ rebind.o
 lightserver
 packenv
 lightserver.spec
+webpage
+temp
 
 # Distribution / packaging
 .Python

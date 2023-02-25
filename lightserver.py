@@ -31,6 +31,7 @@ Boston, MA 02110-1301, USA.
 
 import argparse,os,json
 import asyncio
+import sys
 
 import server.config as c
 from utils.i18n import _
@@ -94,6 +95,10 @@ def main():
         app.run()
     else:
         try:
+            # Run script server
+            import server.script
+            from multiprocessing import Process
+            script_server = Process(target=server.script.run_scriptserver,daemon=True).start()
             # Run main web server
             from server.wsapp import run_server
             asyncio.run(run_server())

@@ -1,0 +1,13 @@
+{
+  "name": "qqq",
+  "script_path": "/home/max/test/script-server-master/samples/scripts/bash_formatting.py",
+  "description": "aasasa",
+  "access": {
+    "shared_access": {
+      "type": "ALL_USERS"
+    }
+  },
+  "requires_terminal": false,
+  "output_format": "terminal",
+  "parameters": []
+}

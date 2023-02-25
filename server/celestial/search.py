@@ -27,6 +27,7 @@ import sqlite3
 
 from typing import Optional
 
+from astropy.coordinates import SkyCoord
 
 class InvalidCoordinates(Exception):
     """
@@ -50,7 +51,7 @@ class ObjectNotFound(Exception):
     The identifier is recognized to be part of one of the supported catalogs,
     but the object isn't in the database (or doesn't exist at all).
 
-    For example, `pyongc.Dso('NGC7000A')` is valid, but it doesn't exist.
+    For example, `pyongc.Object('NGC7000A')` is valid, but it doesn't exist.
     """
     def __init__(self, name: Optional[str] = None):
         if name is not None:
@@ -90,31 +91,16 @@ PATTERNS = {'NGC|IC': r'^((?:NGC|IC)\s?)(\d{1,4})\s?((NED)(\d{1,2})|[A-Z]{1,2})?
             }
 
 
-class Dso(object):
+class Object(object):
     """Describes a Deep Sky Object from ONGC database.
 
     Each object of this class has the following read only properties:
 
-    * cstar_data: The data about central star of planetary nebulaes.
     * constellation: The constellation where the object is located.
     * coords: Object coordinates in HMS and DMS as numpy array or None.
     * dec: Object Declination in a easy to read format as string.
-    * dimensions: Object axes dimensions and position angle.
-    * hubble: The Hubble classification of a galaxy.
-    * id: The internal database Id of the object.
-    * identifiers: All the alternative identifiers of the object.
-    * magnitudes: Object magnitudes.
     * name: The main identifier of the object.
-    * notes: Notes from NED and from ONGC.
-    * notngc: A flag which marks objects not being in the NGC or IC catalog
-    * parallax: Parallax, expressed in milliarcseconds.
-    * pm_dec: Proper apparent motion in Dec, expressed in milliarcseconds/year.
-    * pm_ra: Proper apparent motion in RA, expressed in milliarcseconds/year.
     * ra: Object Right Ascension in a easy to read format as string.
-    * rad_coords: Object coordinates in radians as numpy array or None.
-    * radvel: Radial velocity (heliocentric), expressed in km/s.
-    * redshift: Redshift value (heliocentric).
-    * surface_brightness: The surface brightness value of a galaxy or None.
     * type: Object type.
 
     The class also provides the following methods:
@@ -171,45 +157,33 @@ class Dso(object):
         self._const = objectData[5]
        
     def __str__(self) -> str:
-        """Returns a basic description of the object.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> print(s)
-                NGC0001, Galaxy in Peg
-
+        """
+            Returns a basic description of the object.
+            >>> s = Object("ngc1")
+            >>> print(s)
+            NGC0001, Galaxy in Peg
         """
         return f'{self._name}, {self._type} in {self._const}'
 
     @cached_property
     def constellation(self) -> str:
-        """The constellation where the object is located.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> s.constellation
-                'Peg'
-
-        Returns:
-            Name of the constellation in IAU 3-letter form.
-
+        """
+            The constellation where the object is located.
+            >>> s = Object("ngc1")
+            >>> s.constellation
+            'Peg'
+            Returns:
+                Name of the constellation in IAU 3-letter form.
         """
         return self._const
 
     @cached_property
     def coords(self) -> Optional[np.ndarray]:
-        """Returns object coordinates in HMS and DMS as numpy array or None.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> s.coords
-                array([[ 0.  ,  7.  , 15.84],
-                       [27.  , 42.  , 29.1 ]])
-
-        Returns:
-            A numpy array of shape (2, 3) with R.A. and Declination
-            values expressed in HMS and DMS.
-
+        """
+            Returns object coordinates in HMS and DMS as numpy array or None.
+            Returns:
+                A numpy array of shape (2, 3) with R.A. and Declination
+                values expressed in HMS and DMS.
         """
         if self._ra is None or self._dec is None:
             return None
@@ -230,22 +204,11 @@ class Dso(object):
 
     @cached_property
     def dec(self) -> str:
-        """Object Declination in a easy to read format as string.
-
-        If you need the raw data to use in calculations use `coords` or `rad_coords` properties.
-
-            >>> from pyongc.ongc import Dso
-            >>> s = Dso("ngc1")
-            >>> s.dec
-            '+27:42:29.1'
-
-            >>> from pyongc.ongc import Dso
-            >>> s = Dso("ic1064")
-            >>> s.dec
-            'N/A'
-
-        Returns:
-            string: `'+/-DD:MM:SS.s'` or `'N/A'` if the object has no coordinates.
+        """
+            Object Declination in a easy to read format as string.
+            If you need the raw data to use in calculations use `coords` or `rad_coords` properties.
+            Returns:
+                string: `'+/-DD:MM:SS.s'` or `'N/A'` if the object has no coordinates.
 
         """
         if self.coords is not None:
@@ -255,39 +218,21 @@ class Dso(object):
         
     @cached_property
     def name(self) -> str:
-        """The main identifier of the object.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("m45")
-                >>> s.name
-                'Mel022'
-
-        Returns:
-            The main identifier of the object, as listed in ONGC database
-            or its addendum.
-
+        """
+            The main identifier of the object.
+            Returns:
+                The main identifier of the object, as listed in ONGC database
+                or its addendum.
         """
         return self._name
 
     @cached_property
     def ra(self) -> str:
-        """Object Right Ascension in a easy to read format as string.
-
-        If you need the raw data to use in calculations use `coords` or `rad_coords` properties.
-
-            >>> from pyongc.ongc import Dso
-            >>> s = Dso("ngc1")
-            >>> s.ra
-            '00:07:15.84'
-
-            >>> from pyongc.ongc import Dso
-            >>> s = Dso("ic1064")
-            >>> s.ra
-            'N/A'
-
-        Returns:
-            string: `'HH:MM:SS.ss'` or `'N/A'` if the object has no coordinates.
-
+        """
+            Object Right Ascension in a easy to read format as string.
+            If you need the raw data to use in calculations use `coords` or `rad_coords` properties.
+            Returns:
+                string: `'HH:MM:SS.ss'` or `'N/A'` if the object has no coordinates.
         """
         if self.coords is not None:
             return '{:02.0f}:{:02.0f}:{:05.2f}'.format(*self.coords[0])
@@ -296,17 +241,11 @@ class Dso(object):
 
     @cached_property
     def rad_coords(self) -> Optional[np.ndarray]:
-        """Returns object coordinates in radians as numpy array or None.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> s.rad_coords
-                array([0.03169518, 0.48359728])
-
-        Returns:
-            A numpy array of shape (2,) with R.A. and Declination
-            values expressed in radians.
-
+        """
+            Returns object coordinates in radians as numpy array or None.
+            Returns:
+                A numpy array of shape (2,) with R.A. and Declination
+                values expressed in radians.
         """
         if self._ra is None or self._dec is None:
             return None
@@ -315,119 +254,39 @@ class Dso(object):
 
     @cached_property
     def type(self) -> str:
-        """Object type.
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> s.type
-                'Galaxy'
-
-        Returns:
-            string: Object type
-
+        """
+            Object type.
+            Returns:
+                string: Object type
         """
         return self._type
 
+    @cached_property
+    def astropy(self) -> SkyCoord:
+        """
+            Convert to a SkyCoord Instance
+            SkyCoord('00h42.5m', '+41d12m')
+        """
+        return SkyCoord(f"{int(self.coords[0][0])}h{int(self.coords[0][1])}m{int(self.coords[0][2])}s",
+                        f"{int(self.coords[1][0])}d{int(self.coords[1][1])}m{int(self.coords[1][2])}s"
+                        )
+
     def to_json(self) -> str:
         """Returns object data in JSON format."""
-        return json.dumps(self, cls=DsoEncoder)
+        return json.dumps(self, cls=ObjectEncoder)
 
-    def xephemFormat(self) -> str:
-        """Returns object data in Xephem format.
+class ObjectEncoder(json.JSONEncoder):
+    """
+        A custom json.dumps serializer for Object class.
+    """
 
-        This function will produce a string containing information about the object
-        suitable to be imported in other software that accept Xephem format
-        (for example: PyEphem).
-
-                >>> from pyongc.ongc import Dso
-                >>> s = Dso("ngc1")
-                >>> s.xephemFormat()
-                'NGC0001,f|G,00:07:15.84,+27:42:29.1,13.69,,94.20|64.20|112'
-
-        Returns:
-            Xephem format object description
-
+    def default(self, obj: Object) -> dict:
         """
-        line = []
-        # Field 1: names
-        names = [self.name]
-        identifiers = self.identifiers
-        if identifiers[0] is not None:
-            names.append(identifiers[0])
-        for i in range(1, 4):
-            if identifiers[i] is not None:
-                names.extend(identifiers[i])
-        line.append("|".join(names))
-
-        # Field 2: type designation
-        objType = self.type
-        if objType in ("Galaxy Pair", "Galaxy Triplet", "Group of galaxies"):
-            line.append("f|A")
-        elif objType == "Globular Cluster":
-            line.append("f|C")
-        elif objType == "Double star":
-            line.append("f|D")
-        elif objType in ("HII Ionized region", "Nebula"):
-            line.append("f|F")
-        elif objType == "Galaxy":
-            if self.hubble.startswith("S"):
-                line.append("f|G")
-            else:
-                line.append("f|H")
-        elif objType == "Dark Nebula":
-            line.append("f|K")
-        elif objType in ("Emission Nebula", "Reflection Nebula"):
-            line.append("f|N")
-        elif objType in ("Association of stars", "Open Cluster"):
-            line.append("f|O")
-        elif objType == "Planetary Nebula":
-            line.append("f|P")
-        elif objType == "Supernova remnant":
-            line.append("f|R")
-        elif objType == "Star":
-            line.append("f|S")
-        elif objType == "Star cluster + Nebula":
-            line.append("f|U")
-        else:
-            line.append("f")
-
-        # Field 3: Right Ascension
-        line.append(self.ra)
-
-        # Field 4: Declination
-        line.append(self.dec)
-
-        # Field 5: Magnitude
-        # We use the first available magnitude in the sequence b,v,j,h,k
-        for mag in self.magnitudes:
-            if mag is not None:
-                line.append(str(mag))
-                break
-
-        # Field 6: optional Epoch, we let it empty
-        line.append("")
-
-        # Field 7: Dimensions
-        dimensions = []
-        # Xephem format wants axes espressed in arcsec, we have arcmin
-        for value in (self._majax, self._minax):
-            dimensions.append(f'{value*60:.2f}') if value is not None else dimensions.append("")
-        for value in (self._pa, ):
-            dimensions.append(str(value)) if value is not None else dimensions.append("")
-        line.append("|".join(dimensions))
-
-        return ",".join(line)
-
-
-class DsoEncoder(json.JSONEncoder):
-    """A custom json.dumps serializer for Dso class."""
-    def default(self, obj: Dso) -> dict:
-        """A custom json.dumps serializer for Dso class.
-
-        Args:
-            obj: the Dso object to encode.
+            A custom json.dumps serializer for Object class.
+            Args:
+                obj: the Object object to encode.
         """
-        if isinstance(obj, Dso):
+        if isinstance(obj, Object):
             obj_description = {'name': obj.name,
                                'type': obj.type,
                                'coordinates': {'RA': obj.ra,
@@ -435,7 +294,6 @@ class DsoEncoder(json.JSONEncoder):
                                                },
                                'constellation': obj.constellation
                                }
-
             return obj_description
         else:
             return super().default(obj)
@@ -488,8 +346,8 @@ def _limiting_coords(coords: np.ndarray, radius: int) -> str:
     This is a quick method to exclude objects farther than a specified distance
     from the starting point, but it's not meant to be precise.
 
-            >>> from pyongc.ongc import Dso, _limiting_coords
-            >>> start = Dso('ngc1').coords
+            >>> from pyongc.ongc import Object, _limiting_coords
+            >>> start = Object('ngc1').coords
             >>> _limiting_coords(start, 2)
             ' AND (ra <= 0.06660176425610362 OR ra >= 6.279973901355917) AND \
 (dec BETWEEN 0.44869069854374555 AND 0.5185038686235187)'
@@ -719,7 +577,7 @@ def _str_to_coords(text: str) -> np.ndarray:
         raise InvalidCoordinates(f'This text cannot be recognized as coordinates: {text}')
 
 
-def get(name: str) -> Optional[Dso]:
+def get(name: str) -> Optional[Object]:
     """Search and return an object from the database.
 
     If an object name isn't recognized, it will return None.
@@ -728,60 +586,61 @@ def get(name: str) -> Optional[Dso]:
         name: the name of the object
 
     Returns:
-        Dso or None.
+        Object or None.
 
     """
     try:
-        obj = Dso(name)
+        obj = Object(name)
     except (ObjectNotFound, UnknownIdentifier):
         return None
     return obj
 
 
-def getNeighbors(obj: Union[Dso, str], separation: Union[int, float],
-                 catalog: str = "all") -> List[Tuple[Dso, float]]:
-    """Find all neighbors of an object within a user selected range.
+def getNeighbors(obj: Union[Object, str], separation: Union[int, float],
+                 catalog: str = "all") -> List[Tuple[Object, float]]:
+    """
+        Find all neighbors of an object within a user selected range.
 
-    It requires an object as the starting point of the search (either a string containing
-    the name or a Dso type) and a search radius expressed in arcmins.
+        It requires an object as the starting point of the search (either a string containing
+        the name or a Object type) and a search radius expressed in arcmins.
 
-    The maximum allowed search radius is 600 arcmin (10 degrees).
+        The maximum allowed search radius is 600 arcmin (10 degrees).
 
-    It returns a list of of tuples with the Dso objects found in range and its distance,
-    or an empty list if no object is found:
+        It returns a list of of tuples with the Object objects found in range and its distance,
+        or an empty list if no object is found:
 
-            >>> from pyongc.ongc import Dso, getNeighbors
-            >>> s1 = Dso("ngc521")
-            >>> getNeighbors(s1, 15) #doctest: +ELLIPSIS
-            [(<pyongc.ongc.Dso object at 0x...>, 0.13726168561780452), \
-(<pyongc.ongc.Dso object at 0x...>, 0.24140243942744602)]
+                >>> from pyongc.ongc import Object, getNeighbors
+                >>> s1 = Object("ngc521")
+                >>> getNeighbors(s1, 15) #doctest: +ELLIPSIS
+                [(<pyongc.ongc.Object object at 0x...>, 0.13726168561780452), \
+    (<pyongc.ongc.Object object at 0x...>, 0.24140243942744602)]
 
-            >>> from pyongc.ongc import getNeighbors
-            >>> getNeighbors("ngc521", 1)
-            []
+                >>> from pyongc.ongc import getNeighbors
+                >>> getNeighbors("ngc521", 1)
+                []
 
-    The optional "catalog" parameter can be used to filter the search to only NGC or IC objects:
+        The optional "catalog" parameter can be used to filter the search to only NGC or IC objects:
 
-            >>> from pyongc.ongc import getNeighbors
-            >>> getNeighbors("ngc521", 15, catalog="NGC") #doctest: +ELLIPSIS
-            [(<pyongc.ongc.Dso object at 0x...>, 0.24140243942744602)]
+                >>> from pyongc.ongc import getNeighbors
+                >>> getNeighbors("ngc521", 15, catalog="NGC") #doctest: +ELLIPSIS
+                [(<pyongc.ongc.Object object at 0x...>, 0.24140243942744602)]
 
-    Args:
-        object: a Dso object or a string which identifies the object
-        separation: maximum distance from the object expressed in arcmin
-        catalog: filter for "NGC" or "IC" objects - default is all
+        Args:
+            object: a Object object or a string which identifies the object
+            separation: maximum distance from the object expressed in arcmin
+            catalog: filter for "NGC" or "IC" objects - default is all
 
-    Returns:
-        A list of tuples with each element composed by the Dso object found and
-        its distance from the starting point, ordered by distance.
+        Returns:
+            A list of tuples with each element composed by the Object object found and
+            its distance from the starting point, ordered by distance.
 
-    Raises:
-        ValueError: If the search radius exceeds 10 degrees.
-        InvalidCoordinates: If the starting object hasn't got registered cordinates.
+        Raises:
+            ValueError: If the search radius exceeds 10 degrees.
+            InvalidCoordinates: If the starting object hasn't got registered cordinates.
 
     """
-    if not isinstance(obj, Dso):
-        obj = Dso(obj)
+    if not isinstance(obj, Object):
+        obj = Object(obj)
     if separation > 600:
         raise ValueError('The maximum search radius allowed is 10 degrees.')
     if obj.rad_coords is None:
@@ -797,7 +656,7 @@ def getNeighbors(obj: Union[Dso, str], separation: Union[int, float],
 
     neighbors = []
     for item in _queryFetchMany(cols, tables, params):
-        possibleNeighbor = Dso(item[0])
+        possibleNeighbor = Object(item[0])
         distance = getSeparation(obj, possibleNeighbor)[0]
         if distance <= (separation / 60):
             neighbors.append((possibleNeighbor, distance))
@@ -805,19 +664,19 @@ def getNeighbors(obj: Union[Dso, str], separation: Union[int, float],
     return sorted(neighbors, key=lambda neighbor: neighbor[1])
 
 
-def getSeparation(obj1: Union[Dso, str], obj2: Union[Dso, str],
+def getSeparation(obj1: Union[Object, str], obj2: Union[Object, str],
                   style: str = "raw") -> Union[Tuple[float, float, float], str]:
     """Finds the apparent angular separation between two objects.
 
     This function will compute the apparent angular separation between two objects,
-    either identified with their names as strings or directly as Dso type.
+    either identified with their names as strings or directly as Object type.
 
     By default it returns a tuple containing the angular separation and the differences in A.R.
     and Declination expressed in degrees:
 
-            >>> from pyongc.ongc import Dso, getSeparation
-            >>> s1 = Dso("ngc1")
-            >>> s2 = Dso("ngc2")
+            >>> from pyongc.ongc import Object, getSeparation
+            >>> s1 = Object("ngc1")
+            >>> s2 = Object("ngc2")
             >>> getSeparation(s1, s2)
             (0.03008927371519897, 0.005291666666666788, -0.02972222222221896)
 
@@ -840,8 +699,8 @@ def getSeparation(obj1: Union[Dso, str], obj2: Union[Dso, str],
             pyongc.exceptions.ObjectNotFound: Object named NGC0001A not found in the database.
 
     Args:
-        obj1: first Dso object or string identifier
-        obj2: second Dso object or string identifier
+        obj1: first Object object or string identifier
+        obj2: second Object object or string identifier
         style: use "text" to return a string with degrees, minutes and seconds
 
     Returns:
@@ -853,10 +712,10 @@ def getSeparation(obj1: Union[Dso, str], obj2: Union[Dso, str],
         `'DD° MMm SS.SSs'`
 
     """
-    if not isinstance(obj1, Dso):
-        obj1 = Dso(obj1)
-    if not isinstance(obj2, Dso):
-        obj2 = Dso(obj2)
+    if not isinstance(obj1, Object):
+        obj1 = Object(obj1)
+    if not isinstance(obj2, Object):
+        obj2 = Object(obj2)
     if obj1.rad_coords is None or obj2.rad_coords is None:
         raise InvalidCoordinates('One object hasn\'t got registered coordinates.')
 
@@ -872,61 +731,62 @@ def getSeparation(obj1: Union[Dso, str], obj2: Union[Dso, str],
         return separation
 
 
-def listObjects(**kwargs) -> List[Dso]:
-    """Query the database for DSObjects with specific parameters.
+def listObjects(**kwargs) -> List[Object]:
+    """
+        Query the database for DSObjects with specific parameters.
 
-    This function returns a list of all DSObjects that match user defined parameters.
-    If no argument is passed to the function, it returns all the objects from the database:
+        This function returns a list of all DSObjects that match user defined parameters.
+        If no argument is passed to the function, it returns all the objects from the database:
 
-            >>> from pyongc.ongc import listObjects
-            >>> objectList = listObjects()
-            >>> len(objectList)
-            13992
+                >>> from pyongc.ongc import listObjects
+                >>> objectList = listObjects()
+                >>> len(objectList)
+                13992
 
-    Filters are combined with "AND" in the query; only one value for filter is allowed:
+        Filters are combined with "AND" in the query; only one value for filter is allowed:
 
-            >>> from pyongc.ongc import listObjects
-            >>> objectList = listObjects(catalog="NGC", constellation=["Boo", ])
-            >>> len(objectList)
-            281
+                >>> from pyongc.ongc import listObjects
+                >>> objectList = listObjects(catalog="NGC", constellation=["Boo", ])
+                >>> len(objectList)
+                281
 
-    Duplicated objects are not resolved to main objects:
+        Duplicated objects are not resolved to main objects:
 
-            >>> from pyongc.ongc import listObjects
-            >>> objectList = listObjects(type=["Dup", ])
-            >>> print(objectList[0])
-            IC0011, Duplicated record in Cas
+                >>> from pyongc.ongc import listObjects
+                >>> objectList = listObjects(type=["Dup", ])
+                >>> print(objectList[0])
+                IC0011, Duplicated record in Cas
 
-    The maxSize filter will include objects with no size recorded in database:
+        The maxSize filter will include objects with no size recorded in database:
 
-            >>> from pyongc.ongc import listObjects
-            >>> objectList = listObjects(maxsize=0)
-            >>> len(objectList)
-            1967
+                >>> from pyongc.ongc import listObjects
+                >>> objectList = listObjects(maxsize=0)
+                >>> len(objectList)
+                1967
 
-    Args:
-        catalog (string, optional): filter for catalog. [NGC|IC|M]
-        type (list, optional): filter for object type. See OpenNGC types list.
-        constellation (list, optional): filter for constellation
-            (three letter latin form - e.g. "And")
-        minsize (float, optional): filter for objects with MajAx >= minSize(arcmin)
-        maxsize (float, optional): filter for objects with MajAx < maxSize(arcmin)
-            OR MajAx not available
-        uptobmag (float, optional): filter for objects with B-Mag brighter than value
-        uptovmag (float, optional): filter for objects with V-Mag brighter than value
-        minra (float, optional): filter for objects with RA degrees greater than value
-        maxra (float, optional): filter for objects with RA degrees lower than value
-        mindec (float, optional): filter for objects above specified Dec degrees
-        maxdec (float, optional): filter for objects below specified Dec degrees
-        cname (string, optional): filter for objects with common name like input value
-        withname (bool, optional): filter for objects with common names
+        Args:
+            catalog (string, optional): filter for catalog. [NGC|IC|M]
+            type (list, optional): filter for object type. See OpenNGC types list.
+            constellation (list, optional): filter for constellation
+                (three letter latin form - e.g. "And")
+            minsize (float, optional): filter for objects with MajAx >= minSize(arcmin)
+            maxsize (float, optional): filter for objects with MajAx < maxSize(arcmin)
+                OR MajAx not available
+            uptobmag (float, optional): filter for objects with B-Mag brighter than value
+            uptovmag (float, optional): filter for objects with V-Mag brighter than value
+            minra (float, optional): filter for objects with RA degrees greater than value
+            maxra (float, optional): filter for objects with RA degrees lower than value
+            mindec (float, optional): filter for objects above specified Dec degrees
+            maxdec (float, optional): filter for objects below specified Dec degrees
+            cname (string, optional): filter for objects with common name like input value
+            withname (bool, optional): filter for objects with common names
 
-    Returns:
-        A list of ongc.Dso objects.
+        Returns:
+            A list of ongc.Object objects.
 
-    Raises:
-        ValueError: If a filter name other than those expected is inserted.
-        ValueError: If an unrecognized catalog name is entered. Only [NGC|IC|M] are permitted.
+        Raises:
+            ValueError: If a filter name other than those expected is inserted.
+            ValueError: If an unrecognized catalog name is entered. Only [NGC|IC|M] are permitted.
 
     """
     available_filters = ['catalog',
@@ -947,7 +807,7 @@ def listObjects(**kwargs) -> List[Dso]:
 
     if kwargs == {}:
         params = '1'
-        return [Dso(str(item[0]), True) for item in _queryFetchMany(cols, tables, params)]
+        return [Object(str(item[0]), True) for item in _queryFetchMany(cols, tables, params)]
     for element in kwargs:
         if element not in available_filters:
             raise ValueError("Wrong filter name.")
@@ -997,49 +857,50 @@ def listObjects(**kwargs) -> List[Dso]:
         paramslist.append(f'dec <= {np.radians(kwargs["maxdec"])}')
 
     params = " AND ".join(paramslist)
-    return [Dso(item[0], True) for item in _queryFetchMany(cols, tables, params, order)]
+    return [Object(item[0], True) for item in _queryFetchMany(cols, tables, params, order)]
 
 
 def nearby(coords_string: str, separation: float = 60,
-           catalog: str = "all") -> List[Tuple[Dso, float]]:
-    """Search for objects around given coordinates.
+           catalog: str = "all") -> List[Tuple[Object, float]]:
+    """
+        Search for objects around given coordinates.
 
-    Returns all objects around a point expressed by the coords parameter and within a search
-    radius expressed by the separation parameter.
-    Coordinates must be Right Ascension and Declination expressed as a string in the
-    form "HH:MM:SS.ss +/-DD:MM:SS.s".
+        Returns all objects around a point expressed by the coords parameter and within a search
+        radius expressed by the separation parameter.
+        Coordinates must be Right Ascension and Declination expressed as a string in the
+        form "HH:MM:SS.ss +/-DD:MM:SS.s".
 
-    The maximum allowed search radius is 600 arcmin (10 degrees) and default value is 60.
+        The maximum allowed search radius is 600 arcmin (10 degrees) and default value is 60.
 
-    It returns a list of of tuples with the Dso objects found in range and its distance,
-    or an empty list if no object is found:
+        It returns a list of of tuples with the Object objects found in range and its distance,
+        or an empty list if no object is found:
 
-            >>> from pyongc.ongc import nearby
-            >>> nearby('11:08:44 -00:09:01.3') #doctest: +ELLIPSIS +FLOAT_CMP
-            [(<pyongc.ongc.Dso object at 0x...>, 0.1799936868460791), \
-(<pyongc.ongc.Dso object at 0x...>, 0.7398295985600021), \
-(<pyongc.ongc.Dso object at 0x...>, 0.9810037613087355)]
+                >>> from pyongc.ongc import nearby
+                >>> nearby('11:08:44 -00:09:01.3') #doctest: +ELLIPSIS +FLOAT_CMP
+                [(<pyongc.ongc.Object object at 0x...>, 0.1799936868460791), \
+    (<pyongc.ongc.Object object at 0x...>, 0.7398295985600021), \
+    (<pyongc.ongc.Object object at 0x...>, 0.9810037613087355)]
 
-    The optional "catalog" parameter can be used to filter the search to only NGC or IC objects:
+        The optional "catalog" parameter can be used to filter the search to only NGC or IC objects:
 
-            >>> from pyongc.ongc import nearby
-            >>> nearby('11:08:44 -00:09:01.3', separation=60, catalog='NGC') #doctest: +ELLIPSIS \
-+FLOAT_CMP
-            [(<pyongc.ongc.Dso object at 0x...>, 0.7398295985600021)]
+                >>> from pyongc.ongc import nearby
+                >>> nearby('11:08:44 -00:09:01.3', separation=60, catalog='NGC') #doctest: +ELLIPSIS \
+    +FLOAT_CMP
+                [(<pyongc.ongc.Object object at 0x...>, 0.7398295985600021)]
 
-    Args:
-        coords: R.A. and Dec of search center
-        separation: search radius expressed in arcmin - default 60
-        catalog: filter for "NGC" or "IC" objects - default is all
+        Args:
+            coords: R.A. and Dec of search center
+            separation: search radius expressed in arcmin - default 60
+            catalog: filter for "NGC" or "IC" objects - default is all
 
-    Returns:
-        `[(Dso, separation),]`
+        Returns:
+            `[(Object, separation),]`
 
-        A list of tuples with the Dso object found and its distance from the starting point,
-        ordered by distance.
+            A list of tuples with the Object object found and its distance from the starting point,
+            ordered by distance.
 
-    Raises:
-        ValueError: If the search radius exceeds 10 degrees.
+        Raises:
+            ValueError: If the search radius exceeds 10 degrees.
 
     """
     if separation > 600:
@@ -1057,31 +918,9 @@ def nearby(coords_string: str, separation: float = 60,
 
     neighbors = []
     for item in _queryFetchMany(cols, tables, params):
-        possibleNeighbor = Dso(item[0])
+        possibleNeighbor = Object(item[0])
         distance = _distance(coords, possibleNeighbor.rad_coords)[0]
         if distance <= (separation / 60):
             neighbors.append((possibleNeighbor, distance))
 
     return sorted(neighbors, key=lambda neighbor: neighbor[1])
-
-def stats() -> Tuple[str, str, int, tuple]:
-    try:
-        db = sqlite3.connect(f'file:{DBPATH}?mode=ro', uri=True)
-    except sqlite3.Error:
-        raise OSError(f'There was a problem accessing database file at {DBPATH}')
-
-    try:
-        cursor = db.cursor()
-
-        cursor.execute('SELECT objTypes.typedesc, count(*) '
-                       'FROM objects JOIN objTypes ON objects.type = objTypes.type '
-                       'GROUP BY objects.type')
-        typesStats = cursor.fetchall()
-    except Exception as err:  # pragma: no cover
-        raise err
-    finally:
-        db.close()
-
-    totalObjects = sum(objType[1] for objType in typesStats)
-
-    return totalObjects, typesStats

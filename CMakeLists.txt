@@ -22,6 +22,8 @@ set(${CMAKE_BUILD_TYPE},"Debug")
 # Build PHD2
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/server/guider)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server/guider)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/server/guider/logviewer)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/server/guider/logviewer)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 

@@ -1,0 +1,7 @@
+{
+  "name": "Reboot",
+  "script_path": "script/test.sh",
+  "description": "reboot",
+  "output_format": "terminal",
+  "parameters": []
+}
